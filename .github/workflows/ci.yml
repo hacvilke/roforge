@@ -52,8 +52,12 @@ jobs:
           find bin -type f | sort
       - name: PNG encoder — pixel-validated via standalone luau
         run: |
-          LUAU=$(find bin -type f -name luau | head -1)
+          LUAU=$(realpath "$(find bin -type f -name luau | head -1)")
           (cd studio-bridge && node test/validate_png.mjs "$LUAU")
+      - name: DEFLATE — 12 cases byte-exact vs node:zlib
+        run: |
+          LUAU=$(realpath "$(find bin -type f -name luau | head -1)")
+          (cd studio-bridge && node test/validate_deflate.mjs "$LUAU")
       - name: luau-analyze — fail only on SyntaxError
         run: |
           LUAU_ANALYZE=$(find bin -type f -name luau-analyze | head -1)
