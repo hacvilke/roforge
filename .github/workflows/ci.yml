@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  server:
+    name: server · node tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+
+  cli:
+    name: cli · node tests + e2e demo
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+      - name: e2e demo (offline agent loop)
+        run: node demo/e2e-demo.mjs
+
+  studio-plugins:
+    name: studio plugins · png validate + analyze + rojo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Luau 0.738 + rojo 7.7.0
+        run: |
+          mkdir -p bin
+          curl -fsSL https://github.com/luau-lang/luau/releases/download/0.738/luau-ubuntu.zip -o luau.zip
+          unzip -o -q luau.zip -d bin
+          curl -fsSL https://github.com/rojo-rbx/rojo/releases/download/7.7.0/rojo-7.7.0-linux-x86_64.zip -o rojo.zip
+          unzip -o -q rojo.zip -d bin
+          find bin -type f \( -name 'luau*' -o -name 'rojo' \) -exec chmod +x {} \;
+          find bin -type f | sort
+      - name: PNG encoder — pixel-validated via standalone luau
+        run: |
+          LUAU=$(find bin -type f -name luau | head -1)
+          (cd studio-bridge && node test/validate_png.mjs "$LUAU")
+      - name: luau-analyze — fail only on SyntaxError
+        run: |
+          LUAU_ANALYZE=$(find bin -type f -name luau-analyze | head -1)
+          status=0
+          for f in $(find studio-bridge/src client/src -name '*.lua'); do
+            out=$("$LUAU_ANALYZE" "$f" 2>&1) || true
+            if printf '%s' "$out" | grep -q 'SyntaxError'; then
+              echo "::error::SYNTAX ERROR in $f"
+              printf '%s\n' "$out"
+              status=1
+            fi
+          done
+          echo "analyze gate done (exit $status)"
+          exit $status
+      - name: rojo build — bridge + client
+        run: |
+          ROJO=$(find bin -type f -name rojo | head -1)
+          "$ROJO" build -o /tmp/RoForgeBridge.rbxm studio-bridge/default.project.json
+          "$ROJO" build -o /tmp/RoForge.rbxm client/default.project.json
+          ls -la /tmp/RoForgeBridge.rbxm /tmp/RoForge.rbxm

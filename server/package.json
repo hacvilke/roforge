@@ -1,0 +1,16 @@
+{
+  "name": "roforge-server",
+  "version": "0.1.0",
+  "description": "RoForge backend — tool runtime for the RoForge Studio plugin. Zero runtime dependencies.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,36 @@
+{
+  "name": "roforge-cli",
+  "version": "0.3.0",
+  "description": "RoForge \u2014 Claude-Code-style local AI agent for Roblox Studio. BYOK, zero backend, zero dependencies.",
+  "type": "module",
+  "bin": {
+    "roforge": "bin/roforge.js"
+  },
+  "scripts": {
+    "start": "node bin/roforge.js",
+    "test": "node --test test/",
+    "demo": "node demo/e2e-demo.mjs",
+    "install-plugin": "node ../scripts/install-plugin.mjs bridge",
+    "install-plugin:client": "node ../scripts/install-plugin.mjs client"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "license": "MIT",
+  "keywords": [
+    "roblox",
+    "ai",
+    "agent",
+    "cli",
+    "tui",
+    "mcp",
+    "lua",
+    "rojo"
+  ],
+  "files": [
+    "bin",
+    "src",
+    "demo",
+    "README.md"
+  ]
+}

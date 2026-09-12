@@ -1,0 +1,7 @@
+{
+  "className": "Plugin",
+  "properties": {
+    "Name": "RoForgeBridge",
+    "Source": "local ok, err = pcall(function()\n\tlocal api = require(script:WaitForChild('Bridge'))\n\tapi.start(script)\nend)\nif not ok then\n\twarn('[RoForge Bridge] failed to start: ' .. tostring(err))\nend"
+  }
+}
