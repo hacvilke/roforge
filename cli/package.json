@@ -1,7 +1,7 @@
 {
   "name": "roforge-cli",
   "version": "0.3.0",
-  "description": "RoForge — Claude-Code-style local AI agent for Roblox Studio. BYOK, zero backend, zero dependencies.",
+  "description": "RoForge \u2014 Claude-Code-style local AI agent for Roblox Studio. BYOK, zero backend, zero dependencies.",
   "type": "module",
   "bin": {
     "roforge": "bin/roforge.js"
@@ -32,5 +32,13 @@
     "src",
     "demo",
     "README.md"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hacvilke/roforge.git"
+  },
+  "homepage": "https://github.com/hacvilke/roforge#readme",
+  "bugs": {
+    "url": "https://github.com/hacvilke/roforge/issues"
+  }
 }
