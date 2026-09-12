@@ -46,7 +46,7 @@ jobs:
           mkdir -p bin
           curl -fsSL https://github.com/luau-lang/luau/releases/download/0.738/luau-ubuntu.zip -o luau.zip
           unzip -o -q luau.zip -d bin
-          curl -fsSL https://github.com/rojo-rbx/rojo/releases/download/7.7.0/rojo-7.7.0-linux-x86_64.zip -o rojo.zip
+          curl -fsSL https://github.com/rojo-rbx/rojo/releases/download/v7.7.0/rojo-7.7.0-linux-x86_64.zip -o rojo.zip
           unzip -o -q rojo.zip -d bin
           find bin -type f \( -name 'luau*' -o -name 'rojo' \) -exec chmod +x {} \;
           find bin -type f | sort
