@@ -3,7 +3,7 @@
 [![CI](https://github.com/hacvilke/roforge/actions/workflows/ci.yml/badge.svg)](https://github.com/hacvilke/roforge/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/roforge-cli)](https://www.npmjs.com/package/roforge-cli)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![RoForge Pro](https://img.shields.io/badge/RoForge%20Pro-499%20R%24-9b59b6)](docs/MONETIZATION.md)
+[![RoForge Pro](https://img.shields.io/badge/RoForge%20Pro-999%20R%24-9b59b6)](docs/MONETIZATION.md)
 
 **A local Claude-Code-style AI agent for Roblox Studio.** Runs on your machine,
 talks to Roblox Studio, uses **your own API key** (BYOK), and has **zero backend**
@@ -148,11 +148,10 @@ work as standalone modes — the local CLI is now the primary surface.
 ## RoForge Pro
 
 RoForge is **open-core**: the entire agent, all 25 `forge_*` Studio tools,
-and the Pro *entitlement check* are MIT. **RoForge Pro** is a Robux
-game pass (one-time) or monthly dev product that raises limits and unlocks
-advanced features. No account, no subscription to us — ownership is checked
-in Studio via `MarketplaceService`, and the free build keeps working for
-non-Pro users.
+and the Pro *entitlement check* are MIT. **RoForge Pro** is a one-time
+Robux game pass (~999 R$) that raises limits and unlocks advanced features.
+No account, no subscription — ownership is checked in Studio via
+`MarketplaceService`, and the free build keeps working for non-Pro users.
 
 | | Free | Pro |
 |---|---|---|
@@ -166,8 +165,8 @@ bridge, or starts a short-lived one). The plugin dock also shows a FREE/PRO
 badge and lets you paste your **Pro Game Pass ID** / **Pro Dev Product ID**
 so ownership checks work.
 
-**Get Pro:** create the products in the **RoForge HQ** experience
-([hq/](hq/) has the starter place + step-by-step), then buy the pass there —
+**Get Pro:** create the pass in the **RoForge HQ** experience
+([hq/](hq/) has the starter place + step-by-step), then buy it there —
 your Studio session detects it automatically.
 Licensing boundary: [LICENSE-PRO.md](LICENSE-PRO.md) · monetization: [docs/MONETIZATION.md](docs/MONETIZATION.md).
 

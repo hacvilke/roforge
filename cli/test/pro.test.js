@@ -18,7 +18,7 @@ const FREE_REPORT = [
   "Studio user: 424242",
   "Game Pass 111111: not owned",
   "limits: export depth 6 · import 500 nodes · viewport up to 1280x720",
-  "Unlock Pro: play the RoForge HQ experience and purchase the 'RoForge Pro' game pass (one-time) or 'Pro month' (monthly, repeatable).",
+  "Unlock Pro: play the RoForge HQ experience and purchase the 'RoForge Pro' game pass (one-time).",
 ].join("\n");
 
 // A fake Studio plugin: pings, claims forge_pro jobs, posts canned results.

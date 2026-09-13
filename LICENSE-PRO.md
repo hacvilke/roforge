@@ -10,16 +10,15 @@ means the *feature implementations* flagged `Pro.feature` in
 `studio-bridge/src/Root/Bridge/Pro.lua` (cloud snapshots, team workspaces,
 hosted MCP relay). Those implementations, when distributed, are provided
 under a **separate, closed-source commercial license** and are only enabled
-when your Studio session owns the RoForge Pro game pass or the Pro month
-developer product.
+when your Studio session owns the RoForge Pro game pass (one-time).
 
 ## What this means for you
 
 - **Using RoForge (free):** you get the full MIT-licensed agent with free-tier
   limits (export depth 6, 500-node imports, 1280×720 viewport). No account,
   no license terms beyond MIT.
-- **Using RoForge Pro:** purchasing the game pass or monthly dev product in
-  the **RoForge HQ** experience grants you a *user* right to use the Pro
+- **Using RoForge Pro:** purchasing the one-time game pass in the
+  **RoForge HQ** experience grants you a *user* right to use the Pro
   feature implementations. That right is personal, non-transferable, and
   terminates if you refund the purchase. It does **not** grant you the Pro
   source code.

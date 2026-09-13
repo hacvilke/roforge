@@ -1,14 +1,12 @@
 -- RoForge HQ — client side: a tiny in-experience storefront.
 --
--- After you create the Game Pass / Developer Product in the Creator Dashboard,
--- paste their IDs below (see README.md). With an ID of 0 the buttons show
--- instructions instead of opening a purchase dialog, so the place still works
--- before anything is created.
+-- After you create the Game Pass in the Creator Dashboard, paste its ID below
+-- (see README.md). With an ID of 0 the button shows instructions instead of
+-- opening a purchase dialog, so the place still works before it's created.
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
 
 local PRO_GAME_PASS_ID = 0 -- e.g. 123456789 — from Creator Dashboard
-local PRO_MONTH_DEV_PRODUCT_ID = 0 -- e.g. 987654321 — from Creator Dashboard
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -56,7 +54,7 @@ local panel = make("Frame", {
 makeLabel("TextLabel", "RoForge HQ", 28, panel)
 
 make("TextLabel", {
-	Text = "This experience powers RoForge Pro, the one-time (or monthly) unlock for the RoForge Studio agent.\n\nBelow: purchase the pass, then paste nothing anywhere — your Studio session detects it automatically.",
+	Text = "This experience powers RoForge Pro, the one-time unlock for the RoForge Studio agent.\n\nBelow: purchase the pass, then paste nothing anywhere — your Studio session detects it automatically.",
 	Font = Enum.Font.Gotham,
 	TextColor3 = Color3.fromRGB(190, 190, 200),
 	TextSize = 15,
@@ -117,8 +115,7 @@ local function makeButton(yOffset, title, subtitle, passId, isPass)
 	return btn
 end
 
-makeButton(0.52, "Get RoForge Pro (one-time)", "Game Pass — yours forever, repeatable in Studio", PRO_GAME_PASS_ID, true)
-makeButton(0.68, "Pro month (repeatable)", "Developer Product — 1 month of Pro, renews by repurchase", PRO_MONTH_DEV_PRODUCT_ID, false)
+makeButton(0.56, "Get RoForge Pro", "Game Pass — one-time, yours forever", PRO_GAME_PASS_ID, true)
 
 make("TextLabel", {
 	Text = "Already own Pro? RoForge Studio detects it automatically. Check any time: `roforge pro`.",
@@ -126,7 +123,7 @@ make("TextLabel", {
 	TextColor3 = Color3.fromRGB(140, 140, 150),
 	TextSize = 13,
 	BackgroundTransparency = 1,
-	Position = UDim2.new(0, 0, 0.85, 0),
+	Position = UDim2.new(0, 0, 0.74, 0),
 	Size = UDim2.new(1, 0, 0.15, 0),
 	Parent = panel,
 }, nil)

@@ -360,7 +360,7 @@ function Bridge.start(plugin)
 		Font = Enum.Font.Gotham,
 		TextSize = 12,
 		TextColor3 = Color3.fromRGB(230, 232, 238),
-		PlaceholderText = "Pro Dev Product id (optional, monthly)",
+		PlaceholderText = "Pro Dev Product id (optional — future team product)",
 		PlaceholderColor3 = Color3.fromRGB(120, 126, 138),
 		Size = UDim2.new(1, 0, 0, 26),
 		Text = tostring(Settings.ProDevProductId),

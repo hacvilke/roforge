@@ -1,9 +1,9 @@
 # RoForge HQ — starter place
 
 The RoForge Pro experience: a tiny, publishable place where users buy the
-**RoForge Pro** game pass (one-time) or **Pro month** (repeatable dev product).
-Buying either unlocks Pro limits in the RoForge Bridge plugin — Studio checks
-ownership itself via `MarketplaceService`, so no code ships with your purchase.
+**RoForge Pro** game pass (one-time, ~999 R$). Owning it unlocks Pro limits
+in the RoForge Bridge plugin — Studio checks ownership itself via
+`MarketplaceService`, so no code ships with your purchase.
 
 ```
 hq/
@@ -30,39 +30,37 @@ rojo build -o RoForgeHQ.rbxm default.project.json
 # then in a fresh place: File → Import → RoForgeHQ.rbxm → Publish
 ```
 
-## 2. Create the products (Creator Dashboard → your experience)
+## 2. Create the product (Creator Dashboard → your experience)
 
 | Product | Type | Price | Notes |
 |---|---|---|---|
-| **RoForge Pro** | Game Pass | **499 R$** | one-time; "Yours forever" |
-| **Pro month** | Developer Product | **199 R$** | repeatable; shown as "Pro month" |
+| **RoForge Pro** | Game Pass | **999 R$** | one-time; "yours forever" |
 
-- Game Pass: **Creator Dashboard → Experience → Passes & Products → +**
-  → *Game Pass*. After creation you get an **ID** — note it down.
-- Dev Product: same screen → *Developer Product*, tick **Enable Dev Product
-  as Re-Purchasable** (that's what makes "monthly" work: each repurchase
-  extends Pro for one more month).
+- **Creator Dashboard → Experience → Passes & Products → +** → *Game Pass*.
+  After creation you get an **ID** — note it down.
 
-## 3. Wire the IDs (two places)
+> The old "Pro month" developer product is retired. The plugin's
+> `Pro Dev Product ID` field still works (for a future team/subscription
+> product), but the HQ sells only the one-time pass.
+
+## 3. Wire the ID (two places)
 
 1. **HQ storefront** — `HQ.client.lua`, top of file:
    ```lua
    local PRO_GAME_PASS_ID = 123456789        -- your game pass id
-   local PRO_MONTH_DEV_PRODUCT_ID = 987654321 -- your dev product id
    ```
-   With an ID of `0` the buttons show instructions instead of the purchase
-   dialog (safe before you've created the products).
+   With an ID of `0` the button shows instructions instead of the purchase
+   dialog (safe before you've created the pass).
 
 2. **RoForge Bridge plugin** — in Studio, open the plugin dock and set:
    - `Pro Game Pass ID` → your game pass id
-   - `Pro Dev Product ID` → your dev product id
    - click **Save**
 
 The plugin now reports Free/Pro in its dock and answers `forge_pro`
 (`roforge pro` on the CLI) with the live entitlement.
 
-## Pricing rationale
+## Pricing
 
-See [../docs/MONETIZATION.md](../docs/MONETIZATION.md) — 499 R$ one-time
-(≈ 349 R$ ≈ $1.33 in DevEx after Roblox's 30% cut) or 199 R$/month for
-users who don't want to commit; both feed the same Pro gate.
+One-time 999 R$ → ~699 R$ to you after Roblox's 30% cut → ~$2.66 via DevEx
+(≈ $0.0038/R$, 18+, 50k R$ min cash-out). See
+[../docs/MONETIZATION.md](../docs/MONETIZATION.md).

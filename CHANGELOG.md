@@ -3,6 +3,24 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.5 — 2026-09-13
+
+### Changed — Pro is now a single one-time pass
+- **One product instead of two**: RoForge Pro is the **999 R$ one-time game
+  pass** only. The "Pro month" repeatable dev product is retired (Roblox has
+  no real subscriptions — a repeatable product is just a re-purchase, and
+  one-time lowers the barrier for a dev tool).
+- HQ storefront is now a single "Get RoForge Pro" button; docs, README,
+  wiki, and the plugin's "Unlock Pro" hint all say one-time only.
+- **The dev-product entitlement path stays in the code** (`ProDevProductId`
+  in the plugin dock, `MarketplaceService` check in `Pro.lua`) — a future
+  team/subscription product re-enables with zero code change.
+- Rebuilt `RoForgeBridge.rbxm` (updated hint) + `RoForgeHQ.rbxm` (single
+  button); npm bundle re-synced.
+
+### Tests
+- All green: CLI 94/94, Pro 35/35, analyze gate, e2e demo.
+
 ## 0.3.4 — 2026-09-13
 
 ### Added — "where do I get the plugin?" is now a one-liner

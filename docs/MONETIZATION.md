@@ -6,20 +6,27 @@ HQ starter place — is MIT, free, and stays that way.
 
 ## What Pro is
 
-A **game pass** (one-time) or a **monthly developer product** (repeatable),
-sold inside the **RoForge HQ** experience — Robux passes and products must
-live in an experience, which is why the HQ exists. Owning either makes your
-Studio session Pro. The purchase is a normal Roblox transaction; there is no
-account with the maintainer, no separate checkout.
+A **one-time game pass**, sold inside the **RoForge HQ** experience — Robux
+passes must live in an experience, which is why the HQ exists. Owning it
+makes your Studio session Pro, forever. The purchase is a normal Roblox
+transaction; there is no account with the maintainer, no separate checkout.
 
 | Product | Type | Price |
 |---|---|---|
-| RoForge Pro | Game Pass | 499 R$ (one-time) |
-| Pro month | Developer Product | 199 R$ (repeatable — Roblox has no subscriptions, so the monthly option is a re-purchase) |
+| RoForge Pro | Game Pass | **999 R$** (one-time) |
 
-Roblox takes 30%: 499 R$ → ~349 R$ → ~$1.33 via DevEx (≈ $0.0038/R$,
+Roblox takes 30%: 999 R$ → ~699 R$ → ~$2.66 via DevEx (≈ $0.0038/R$,
 18+, 50k R$ minimum cash-out). Playing the HQ experience while subscribed to
 Premium also generates the standard Premium payouts.
+
+> **Why one-time only.** Roblox has no subscriptions — a "monthly" dev
+> product is just a re-purchase, which users don't do. One SKU = one button,
+> one id, no recurring-billing expectations. An expiring license key was
+> considered and rejected: it would need a hosted key/expiry backend and is
+> bypassable, whereas a game pass is enforced by Roblox per-account. The
+> dev-product entitlement path stays in the code (`ProDevProductId` in the
+> plugin dock) so a team/subscription product can re-enable later with zero
+> code change.
 
 ## What Pro changes
 
@@ -53,10 +60,9 @@ raised limits. The entitlement check itself is MIT in either case.
 
 1. Publish the **RoForge HQ** experience from the `hq/` starter place
    (`hq/README.md` walks through it).
-2. Creator Dashboard → Passes & Products: create the **499 R$ game pass** and
-   the **199 R$ dev product** (re-purchasable) → paste both ids into the
-   plugin dock and into the HQ storefront
-   (`hq/src/StarterPlayer/StarterPlayerScripts/HQ.client.lua`).
+2. Creator Dashboard → Passes & Products: create the **999 R$ game pass** →
+   paste its id into the plugin dock (**Pro Game Pass ID**) and into the HQ
+   storefront (`hq/src/StarterPlayer/StarterPlayerScripts/HQ.client.lua`).
 3. Publish the bridge plugin (File → Publish to Roblox as a Plugin).
 4. Enable DevEx (Creator Dashboard → Payments) to cash out at 50k R$.
 5. Optional: make the Toolbox copy of the plugin **premium-only** — Premium

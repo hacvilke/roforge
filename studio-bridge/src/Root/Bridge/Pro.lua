@@ -192,7 +192,7 @@ function Pro.uiLabel()
 		if s.passOwned then
 			return "PRO — game pass"
 		end
-		return "PRO — monthly product"
+		return "PRO — dev product"
 	end
 	if s.configured then
 		return "Free tier (pass ids set)"
@@ -216,7 +216,7 @@ function Pro.report()
 		if s.devProductId > 0 then
 			table.insert(
 				lines,
-				("Developer Product %d: %s"):format(s.devProductId, s.devProductOwned and "OWNED (monthly)" or "not owned")
+				("Developer Product %d: %s"):format(s.devProductId, s.devProductOwned and "OWNED" or "not owned")
 			)
 		end
 	else
@@ -249,8 +249,7 @@ function Pro.report()
 	if not s.pro then
 		table.insert(
 			lines,
-			"Unlock Pro: play the RoForge HQ experience and purchase the 'RoForge Pro' game pass (one-time) "
-				.. "or 'Pro month' (monthly, repeatable)."
+			"Unlock Pro: play the RoForge HQ experience and purchase the 'RoForge Pro' game pass (one-time)."
 		)
 	end
 	return table.concat(lines, "\n")
