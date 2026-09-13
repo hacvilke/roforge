@@ -8,8 +8,16 @@ import os from "node:os";
 import path from "node:path";
 import { randomToken } from "./util.js";
 
-export const CONFIG_DIR = process.env.ROFORGE_CONFIG_DIR || path.join(os.homedir(), ".roforge");
-export const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
+// Resolved lazily so ROFORGE_CONFIG_DIR changes (tests, late env) are honored.
+export function configDir() {
+  return process.env.ROFORGE_CONFIG_DIR || path.join(os.homedir(), ".roforge");
+}
+export function configFile() {
+  return path.join(configDir(), "config.json");
+}
+// (static snapshots — display only; read/write go through configFile())
+export const CONFIG_DIR = configDir();
+export const CONFIG_FILE = configFile();
 
 // Provider registry. "auto" (default) picks the first configured provider,
 // free-tier providers first (gemini → groq → openrouter → anthropic → openai).
@@ -112,7 +120,7 @@ const DEFAULTS = {
 
 export function loadFileConfig() {
   try {
-    return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+    return JSON.parse(fs.readFileSync(configFile(), "utf8"));
   } catch {
     return {};
   }
@@ -121,8 +129,8 @@ export function loadFileConfig() {
 export function saveFileConfig(patch) {
   const current = loadFileConfig();
   const next = deepMerge(current, patch);
-  fs.mkdirSync(CONFIG_DIR, { recursive: true });
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(next, null, 2));
+  fs.mkdirSync(configDir(), { recursive: true });
+  fs.writeFileSync(configFile(), JSON.stringify(next, null, 2));
   return next;
 }
 
@@ -134,10 +142,38 @@ function deepMerge(a, b) {
   return out;
 }
 
+// Lenient import: env-var-style keys (GEMINI_API_KEY, OPENROUTER_API_KEY, …)
+// accepted from ANYWHERE in the config file (top-level or nested, e.g. under
+// "bridge"), mapped onto the canonical key fields.
+const ENV_STYLE_KEY_FIELDS = {
+  GEMINI_API_KEY: "geminiKey",
+  GROQ_API_KEY: "groqKey",
+  OPENROUTER_API_KEY: "openrouterKey",
+  ANTHROPIC_API_KEY: "anthropicKey",
+  OPENAI_API_KEY: "openaiKey",
+};
+function collectEnvStyleKeys(node, out) {
+  if (!node || typeof node !== "object") return out;
+  for (const [k, v] of Object.entries(node)) {
+    if (typeof v === "string" && v && ENV_STYLE_KEY_FIELDS[k] && !out[ENV_STYLE_KEY_FIELDS[k]]) {
+      out[ENV_STYLE_KEY_FIELDS[k]] = v;
+    } else if (v && typeof v === "object") {
+      collectEnvStyleKeys(v, out);
+    }
+  }
+  return out;
+}
+
 // Resolved, runtime config (env overrides applied, defaults filled).
 export function resolveConfig() {
   const file = loadFileConfig();
   const cfg = deepMerge(DEFAULTS, file);
+
+  // env-var-style keys anywhere in the file (e.g. {"bridge": {"OPENROUTER_API_KEY": "…"}})
+  const envStyle = collectEnvStyleKeys(file, {});
+  for (const [field, val] of Object.entries(envStyle)) {
+    if (!cfg[field]) cfg[field] = val;
+  }
 
   cfg.geminiKey = process.env.GEMINI_API_KEY || cfg.geminiKey || "";
   cfg.groqKey = process.env.GROQ_API_KEY || cfg.groqKey || "";

@@ -32,6 +32,9 @@ export class Session {
     return effectiveProvider(this.cfg) || this.cfg.provider || "auto";
   }
   get provider() {
+    // "auto" with no configured keys → null (caller shows a friendly
+    // "no API key" error instead of silently hitting Anthropic).
+    if (this.providerName === "auto" && !effectiveProvider(this.cfg)) return null;
     return PROVIDER_MODULES[this.providerName] || Anthropic;
   }
   get model() {
@@ -80,6 +83,15 @@ Current state:
   }
 
   async send(userText) {
+    if (!this.provider) {
+      const prov = this.cfg.provider && this.cfg.provider !== "auto" ? this.cfg.provider : "auto";
+      throw new Error(
+        `No API key found for ${prov === "auto" ? "any provider" : prov}. ` +
+          "Run `roforge login --provider <gemini|groq|openrouter|anthropic|openai>` " +
+          "(free keys: aistudio.google.com, console.groq.com, openrouter.ai) or set the " +
+          "matching *_API_KEY env var / key in your config."
+      );
+    }
     this.turns++;
     this.aborted = false;
     this._controller = new AbortController();

@@ -3,6 +3,31 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.1 — 2026-09-13
+
+### Fixed (from the first real Windows install)
+- **Config: env-var-style keys now work anywhere in `config.json`** —
+  `{"bridge": {"OPENROUTER_API_KEY": "…"}}` (or top-level) is imported onto
+  the right provider. Previously only the canonical `openrouterKey` field was
+  read, so hand-written configs silently showed "no API key found".
+- **"No Anthropic API key" dead-end** — with zero keys configured, `auto`
+  mode now errors with `No API key found … run roforge login …` instead of
+  silently routing to Anthropic; `roforge chat` shows the same friendly error
+  (no stack trace).
+- **TUI: shell commands get a hint** — typing `roforge login` (or
+  `npm`/`node`/`npx`/`git …)` into the TUI now prints "that's a shell
+  command — /exit first" instead of being sent to the model.
+- **TUI: version banner** now reads from `package.json` (was hard-coded 0.2.0).
+- **TUI: `/model <name>`** warns (softly) on unrecognized model names.
+- **Windows: `roforge login`** falls back to a visible paste prompt when raw
+  terminal input isn't supported (legacy consoles).
+- Config path resolves lazily (honors `ROFORGE_CONFIG_DIR` set after import —
+  tests + late env).
+
+### Added
+- Regression tests: lenient config import, no-key friendly error, explicit
+  provider named error, TUI shell guard (63 CLI tests total).
+
 ## 0.3.0 — 2026-09-12
 
 ### Fixed

@@ -107,3 +107,18 @@ test("no-color: --no-color flag and env vars strip ANSI", (t) => {
   delete process.env.NO_COLOR;
   assert.match(ansi.bold("w"), /\x1b\[1m/);
 });
+
+test("tui: shell commands typed into chat get a hint, not sent to the model", () => {
+  const writes = [];
+  let sent = 0;
+  const ui = new TUI(
+    { tools: [], send: async () => { sent++; } },
+    { out: { write: (s) => writes.push(String(s)) } }
+  );
+  ui._submit("roforge login --provider openrouter");
+  assert.equal(sent, 0, "shell command must NOT be sent to the model");
+  assert.match(writes.join(""), /shell command/);
+  // a normal message still runs a turn
+  ui._submit("build me a car");
+  assert.equal(sent, 1, "normal message runs a turn");
+});

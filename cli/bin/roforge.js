@@ -84,12 +84,26 @@ async function main() {
       const promptKey = async (label) => {
         process.stderr.write(`Paste ${label} (input hidden): `);
         let val = "";
-        if (process.stdin.isTTY) {
-          process.stdin.setRawMode(true);
+        // raw mode hides input; legacy Windows consoles may not support it —
+        // fall back to a visible paste instead of crashing
+        let raw = false;
+        if (process.stdin.isTTY && typeof process.stdin.setRawMode === "function") {
+          try {
+            process.stdin.setRawMode(true);
+            raw = true;
+          } catch {
+            raw = false;
+          }
+        }
+        if (raw) {
           for await (const chunk of process.stdin) {
             for (const ch of String(chunk)) {
               if (ch === "\r" || ch === "\n" || ch === "\x04") {
-                process.stdin.setRawMode(false);
+                try {
+                  process.stdin.setRawMode(false);
+                } catch {
+                  /* ignore */
+                }
                 console.error("");
                 return val;
               }
@@ -98,6 +112,7 @@ async function main() {
             }
           }
         } else {
+          process.stderr.write(dim("(raw input unsupported — paste the key and press Enter)\n"));
           for await (const chunk of process.stdin) val += String(chunk);
           return val.trim();
         }
@@ -336,7 +351,14 @@ async function oneShot(cfg, prompt) {
     },
   });
   await session.init();
-  const out = await session.send(prompt);
+  let out;
+  try {
+    out = await session.send(prompt);
+  } catch (e) {
+    console.error(red(`error: ${e.message || e}`) + "\n");
+    bridge.stop();
+    process.exit(1);
+  }
   process.stdout.write("\n");
   bridge.stop();
   process.exit(out.ok ? 0 : 1);

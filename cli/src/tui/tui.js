@@ -1,11 +1,25 @@
 // RoForge TUI — Claude-Code-style interactive terminal session.
 // Append-style rendering (terminal scrollback preserved), single status line
 // with a spinner, approval prompts, slash commands, input history.
+import { createRequire } from "node:module";
 import { bold, dim, red, green, yellow, cyan, magenta, gray, wrap, SPINNER_FRAMES, CLEAR_LINE } from "./ansi.js";
 import { parseModelRef, PROVIDERS } from "../config.js";
 import { MarkdownStream } from "./markdown.js";
 
-const VERSION = "0.2.0";
+const VERSION = (() => {
+  try {
+    return createRequire(import.meta.url)("../../package.json").version;
+  } catch {
+    return "dev";
+  }
+})();
+
+// Known model names (for a soft /model warning; anything else is allowed).
+const KNOWN_MODELS = new Set();
+for (const p of Object.values(PROVIDERS)) {
+  if (p.defaultModel) KNOWN_MODELS.add(p.defaultModel);
+  if (p.freeModel) KNOWN_MODELS.add(p.freeModel);
+}
 
 export class TUI {
   constructor(session, { out = process.stdout, err = process.stderr } = {}) {
@@ -132,6 +146,17 @@ export class TUI {
       this._slash(line);
       return;
     }
+    // Shell commands typed into the TUI go to the model and fail
+    // confusingly — catch the common ones and point at the terminal.
+    if (/^(roforge|npm|node|npx|git)\b(\s|$)/.test(line)) {
+      this.out.write(
+        yellow(
+          "that's a shell command, not a chat message — /exit first, then run it in your terminal " +
+            "(e.g. `roforge login`). In the TUI use /help for commands.\n"
+        )
+      );
+      return;
+    }
     this.history.push(line);
     this.historyIndex = -1;
     this._runTurn(line);
@@ -193,6 +218,11 @@ export class TUI {
           }
           const free = PROVIDERS[this.session.providerName]?.hasFreeTier ? dim(" · free tier") : "";
           this.out.write(`model → ${this.session.cfg._activeModel} (${this.session.providerName}${free})\n`);
+          if (!ref && !KNOWN_MODELS.has(arg)) {
+            this.out.write(
+              dim(`  (unrecognized model name — double-check the spelling, or pin explicitly: /model provider:model, e.g. /model gemini:gemini-2.5-flash)\n`)
+            );
+          }
         } else {
           const free = PROVIDERS[this.session.providerName]?.hasFreeTier ? dim(" · free tier") : "";
           this.out.write(`current: ${this.session.model} (${this.session.providerName}${free})\n`);
