@@ -1,5 +1,10 @@
 # RoForge
 
+[![CI](https://github.com/hacvilke/roforge/actions/workflows/ci.yml/badge.svg)](https://github.com/hacvilke/roforge/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/roforge-cli)](https://www.npmjs.com/package/roforge-cli)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![RoForge Pro](https://img.shields.io/badge/RoForge%20Pro-499%20R%24-9b59b6)](docs/MONETIZATION.md)
+
 **A local Claude-Code-style AI agent for Roblox Studio.** Runs on your machine,
 talks to Roblox Studio, uses **your own API key** (BYOK), and has **zero backend**
 in the core — free of subscriptions, free of credit meters, free of middlemen.
