@@ -521,9 +521,15 @@ Priority order:
 ## Environment notes (this sandbox)
 
 - Node v20 (global fetch, node:test).
-- `/tmp/luau`, `/tmp/luau-analyze`, `/tmp/luau-compile`, `/tmp/luau-ast`
+- `bin/luau`, `bin/luau-analyze`, `bin/luau-compile`, `bin/luau-ast`
   (official Luau release binaries — see Turn 3 research: standalone `luau`
-  limits above). `/tmp/rojo` (Rojo 7.7.0). Re-download if the sandbox resets.
+  limits above). `bin/rojo` (Rojo 7.7.0). Re-download if the sandbox resets.
+- **Analyze gate gotcha:** `luau --analyze` is NOT a real flag — it silently
+  *runs* the file and its exit/output is useless for syntax checking. Always
+  use the separate **`bin/luau-analyze`** binary (what CI does) and grep its
+  output for `SyntaxError`. Turn 17 caught a missing `end` in
+  `ExtraTools.lua` that `luau --analyze` let through — CI's `luau-analyze`
+  step is the source of truth.
 - Roblox Studio itself is NOT available here — Studio-side verification is
   analyzer + Rojo build + careful review; first live Studio session may
   surface UI/protocol tweaks (RenderSurfaceTexture `FocusMode`/`Image:Read`

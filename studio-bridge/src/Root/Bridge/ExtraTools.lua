@@ -825,6 +825,7 @@ local function forgeTeamShare(args)
 	if not args.label or args.label == "" or not args.ref or args.ref == "" then
 		return { ok = false, error = "label and ref are required (e.g. label='level1-wip', ref='place:12345') }"
 	}
+	end
 	return ProModuleLoader.share(args.label, args.ref)
 end
 
