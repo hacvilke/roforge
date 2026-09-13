@@ -420,13 +420,31 @@ misread LEN/NLEN.
   **OK** · deflate **12/12 byte-exact** (incl. 200KB multi-block mixed) ·
   `luau-analyze` no SyntaxError · `rojo build` → `/tmp/bridge-t8.rbxm`.
 
-## NEXT — Turn 9 (when user says "continue")
+## DONE — Turn 9 (GitHub repo + npm publish + monetization plan)
+
+- **Public repo**: `https://github.com/hacvilke/roforge` (main, MIT,
+  prebuilt `.rbxm`, repo URLs in `package.json`). GitHub Actions CI green
+  (cli 58 + e2e, server 21, studio plugins: PNG pixel-validated + DEFLATE
+  12/12 + analyze + rojo). CI fixes: rojo tag `v7.7.0`; luau binary needs
+  an absolute path (relative path resolved against the wrong cwd).
+- **npm published**: `roforge-cli@0.3.0` on **npmjs** (npm account `mrciv`;
+  fine-grained token with 2FA-bypass required — classic tokens 403).
+  Smoke-tested: clean `npm i roforge-cli` → `roforge --help` boots. Also on
+  **GitHub Packages** as `@hacvilke/roforge-cli@0.3.0`.
+- **`docs/MONETIZATION.md`**: open-core plan — free MIT core forever;
+  "RoForge HQ" experience hosts a Pro Game Pass (~499 R$) + monthly dev
+  product (~199 R$), 70/30 split, DevEx cashout; pro gate =
+  `MarketplaceService:UserOwnsGamePassAsync` + separate closed-source
+  module (zero pro code in the open repo); premium Toolbox plugin for
+  passive payouts; Stripe team plans later.
+
+## NEXT — Turn 10 (when user says "continue")
 
 Priority order:
-1. **npm publish (needs user)**: user sets their repo URL in
-   `cli/package.json` + `npm i -g roforge-cli` smoke test from a fresh
-   prefix. Everything else is prepped (publish config, changelog, package
-   README).
+1. **Pro pass-gate scaffolding (no Roblox account needed)**:
+   `ProGamePassId`/`ProDevProductId` in bridge Settings + ownership check +
+   `forge_pro` status tool + `roforge pro` CLI subcommand. Live the moment
+   the user pastes the real pass ids.
 2. **Deflate speed tuning (optional)**: chain-length/window tuning for the
    slow CLI path (2.36MB took ~1.3s); consider `GOOD_MATCH` raise for
    repetitive viewport frames.

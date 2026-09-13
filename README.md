@@ -63,15 +63,13 @@ roforge login --provider gemini    # or groq / openrouter / anthropic / openai
 roforge                            # interactive TUI in your project directory
 ```
 
-> **Install options:** published on **GitHub Packages** as
-> `@hacvilke/roforge-cli` (any GitHub token with `read:packages` works):
+> Also published on **GitHub Packages** as `@hacvilke/roforge-cli` (any
+> GitHub token with `read:packages` works):
 > ```bash
 > npm config set @hacvilke:registry https://npm.pkg.github.com
 > echo "//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN" >> ~/.npmrc
 > npm i -g @hacvilke/roforge-cli
 > ```
-> or simply clone the repo and run `node cli/bin/roforge.js`. The `roforge-cli`
-> npmjs package is publish-ready (24-file, dependency-free tarball).
 
 **No paid API yet?** The free tiers work out of the box: a free Gemini key
 (aistudio.google.com, ~1,500 req/day, no card), Groq (console.groq.com), or an
@@ -153,9 +151,9 @@ undo checkpoints, find/bulk-create/snapshot/diff/export/import Studio tools
 **multi-block DEFLATE** (streams > 64 KB now inflate byte-exact, with
 per-block dynamic/stored choice), property-level `forge_diff`,
 streaming Markdown + expandable tool output (`/out`) in the TUI, real deflate,
-multi-provider + free tiers, and a publish-ready `roforge-cli` npm package
-(`npm pack` clean, zero deps). Next: npm publish (set your repo URL),
-Deflate speed tuning, team features. See `PROGRESS.md`.
+multi-provider + free tiers, and the **published** `roforge-cli` npm package
+(24 files, zero deps — `npm i -g roforge-cli`). Next: Deflate speed tuning,
+Pro pass-gate (Robux), team features. See `PROGRESS.md` and `docs/MONETIZATION.md`.
 
 ## License
 
