@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in RoForge is broken
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! RoForge is local-first, so please include how you're running it.
+  - type: checkboxes
+    id: check
+    attributes:
+      label: Before submitting
+      options:
+        - label: I ran `roforge version` and can share the output
+          required: true
+        - label: I checked the repo README and docs/ for the behavior
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where does it happen?
+      options:
+        - CLI / TUI (roforge)
+        - studio-bridge plugin (Studio)
+        - roforge pro / Pro entitlement
+        - HQ experience
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Repro steps
+      placeholder: |
+        1. Run `roforge ...`
+        2. In Studio ...
+        3. ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      render: shell
+      placeholder: "paste the exact error text (redactions of keys/tokens welcome)"
+  - type: input
+    id: version
+    attributes:
+      label: roforge version
+      placeholder: "0.3.x (from `roforge version`)"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: OS + Node version
+      placeholder: "Windows 11 / Node 20.11 — or macOS / Linux"
+    validations:
+      required: true

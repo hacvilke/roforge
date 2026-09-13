@@ -10,11 +10,12 @@ import http from "node:http";
 import { json } from "./wire.js";
 
 export class BridgeServer {
-  constructor({ port, host = "127.0.0.1", token, jobTimeoutMs = 60000 }) {
+  constructor({ port, host = "127.0.0.1", token, jobTimeoutMs = 60000, completedTtlMs = 30000 }) {
     this.port = port;
     this.host = host;
     this.token = token;
     this.jobTimeoutMs = jobTimeoutMs;
+    this.completedTtlMs = completedTtlMs;
     this.jobs = new Map(); // id → {id, tool, args, status, resolve, timer}
     this.lastPingAt = null;
     this.lastSeenAt = null;
@@ -45,7 +46,7 @@ export class BridgeServer {
   stop() {
     for (const job of this.jobs.values()) {
       clearTimeout(job.timer);
-      job.resolve({ ok: false, error: "bridge shut down" });
+      if (typeof job.resolve === "function") job.resolve({ ok: false, error: "bridge shut down" });
     }
     this.jobs.clear();
     if (this.server) {
@@ -114,18 +115,89 @@ export class BridgeServer {
           }
           clearTimeout(job.timer);
           const out = body.error ? { ok: false, error: body.error } : { ok: true, result: body.result ?? "" };
-          this.jobs.delete(job.id);
-          job.resolve(out);
+          job.status = "done";
+          job.out = out;
+          if (typeof job.resolve === "function") job.resolve(out);
+          this._retire(job);
           emit("job_done", { id: job.id, ...out });
           json(res, 200, { ok: true });
         });
         return;
       }
 
+      // Enqueue a job from an authenticated client (used by `roforge pro`
+      // attaching to an already-running bridge). The plugin still discovers
+      // it via the normal GET /jobs claim path.
+      if (req.method === "POST" && path === "/v1/bridge/jobs/enqueue") {
+        let body = {};
+        const chunks = [];
+        let size = 0;
+        req.on("data", (c) => {
+          size += c.length;
+          if (size < 1024 * 1024) chunks.push(c);
+        });
+        req.on("end", () => {
+          try {
+            body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {};
+          } catch {
+            body = {};
+          }
+          if (typeof body.tool !== "string" || !body.tool) {
+            return json(res, 400, { error: "missing tool", code: "BAD_REQUEST" });
+          }
+          const id = this.enqueueRemote(body.tool, body.args ?? {});
+          json(res, 200, { ok: true, id });
+        });
+        return;
+      }
+
+      // Poll a (possibly completed) job's status — read by an attaching client.
+      const gs = /^\/v1\/bridge\/jobs\/(\w+)$/.exec(path);
+      if (req.method === "GET" && gs) {
+        const st = this.jobStatus(gs[1]);
+        if (!st) return json(res, 404, { error: "unknown job", code: "JOB_NOT_FOUND" });
+        return json(res, 200, { ok: true, ...st });
+      }
+
       return json(res, 404, { error: `no route: ${req.method} ${path}`, code: "NOT_FOUND" });
     } catch (e) {
       json(res, 500, { error: e.message, code: "INTERNAL" });
     }
+  }
+
+  // Keep a finished job readable for a short window (so an attaching client
+  // can poll its result), then drop it. Unref'd: housekeeping must not keep
+  // the CLI process (or test runner) alive.
+  _retire(job) {
+    const t = setTimeout(() => {
+      if (this.jobs.get(job.id) === job) this.jobs.delete(job.id);
+    }, this.completedTtlMs);
+    if (typeof t.unref === "function") t.unref();
+  }
+
+  // Enqueue a job on behalf of a remote (attaching) client. Returns the id to
+  // poll. The plugin claims it through the normal GET /jobs path.
+  enqueueRemote(tool, args, { timeoutMs = this.jobTimeoutMs } = {}) {
+    const id = `job_${this.nextJobId++}`;
+    const job = { id, tool, args, status: "pending", remote: true, out: null, resolve: null, claimedAt: null, timer: null };
+    job.timer = setTimeout(() => {
+      if (this.jobs.get(id) === job && job.status !== "done") {
+        job.status = "timeout";
+        job.out = { ok: false, error: `studio job timed out after ${Math.round(timeoutMs / 1000)}s` };
+        this._retire(job);
+      }
+    }, timeoutMs);
+    this.jobs.set(id, job);
+    return id;
+  }
+
+  // Current status of a job for a poller: {id, status} while in flight, or
+  // {id, status:"done"|"timeout", ...out} once finished. null if unknown.
+  jobStatus(id) {
+    const job = this.jobs.get(id);
+    if (!job) return null;
+    if (job.status === "pending" || job.status === "claimed") return { id, status: job.status };
+    return { id, status: job.status, ...(job.out || {}) };
   }
 
   // Submit a tool job and wait for the plugin's result. Resolves to

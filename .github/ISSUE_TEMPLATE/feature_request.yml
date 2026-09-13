@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest an idea or a Pro feature
+title: "[feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Note: RoForge is local-first with **zero dependencies** —
+        features that would add a backend, a runtime dep, or a new service are reviewed
+        against that constraint. Pro-gated ideas are welcome (see docs/MONETIZATION.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: What do you want to be able to do?
+      description: Describe the capability and the problem it solves.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: Who benefits, how often, what's the cost today.
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Should this be free or Pro?
+      description: See docs/MONETIZATION.md for the current free/Pro split.
+      options:
+        - Free (core)
+        - Pro (paid unlock)
+        - Not sure / maintainer's call
+    validations:
+      required: true
+  - type: textarea
+    id: alt
+    attributes:
+      label: Alternatives you've considered
+      placeholder: "Anything that gets you there today, even roughly."
+  - type: checkboxes
+    id: will
+    attributes:
+      label: I'd be willing to
+      options:
+        - label: Open a PR (see CONTRIBUTING.md)
+        - label: Test a prototype / be an early Pro user

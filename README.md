@@ -98,30 +98,31 @@ Connecting Studio (pick one):
    ```
 
 Commands: `roforge` (TUI) · `chat -m "…"` · `studio` · `tools` ·
-`login --provider <p>` · `providers` · `analyze <file…>` ·
-`config [set k v]` · `version`. Full usage: `docs/CLI.md`.
+`pro` (license status) · `login --provider <p>` · `providers` ·
+`analyze <file…>` · `config [set k v]` · `version`. Full usage: `docs/CLI.md`.
 
 ## Repository layout
 
 ```
 cli/           MIT — the local agent (Node, zero deps)
-  bin/roforge.js          CLI entry (TUI / chat / studio / tools / login / analyze)
+  bin/roforge.js          CLI entry (TUI / chat / studio / pro / tools / login / analyze)
   src/providers/          anthropic · openai · gemini · groq · openrouter (SSE) adapters
   src/mcp.js              MCP Streamable-HTTP client (talks to Studio's server)
   src/bridge/             local loopback bridge server (polling protocol)
   src/tools/              web, roblox, project, studio tool factories
   src/agent.js            the agent loop
   src/tui/                terminal UI (ANSI, zero deps)
-  test/                   58 tests incl. full agent loop + provider routing + vision on both tiers
+  test/                   86 tests incl. full agent loop + provider routing + vision on both tiers
   demo/e2e-demo.mjs       offline end-to-end demo
 studio-bridge/ MIT — thin Studio plugin (Luau) that polls the bridge
-  src/Root/Bridge/        Bridge loop, LocalTools, ExtraTools, Viewport, PngEncoder
-  test/                   PNG encoder validation (pixel-verified under `luau`)
+  src/Root/Bridge/        Bridge loop, LocalTools, ExtraTools, Viewport, PngEncoder, Pro
+  test/                   PNG encoder + Pro entitlement validation (runs under `luau`)
+hq/          MIT — the RoForge HQ experience starter (where RoForge Pro is bought)
 client/        MIT — (v0.1) full in-Studio chat plugin, still works standalone
 server/        Apache-2.0 — (v0.1) optional hosted tool backend, not required
 scripts/       install-plugin.mjs (copies a built .rbxm into your OS plugins folder)
-docs/          architecture, CLI, bridge protocol, tool spec, security
-.github/       CI: node tests + e2e demo + PNG validate + luau-analyze + rojo builds
+docs/          architecture, CLI, bridge protocol, tool spec, security, monetization
+.github/       CI: node tests + e2e demo + PNG validate + Pro validate + luau-analyze + rojo builds
 ```
 
 ## Why local-first (and what that buys you)
@@ -135,10 +136,37 @@ docs/          architecture, CLI, bridge protocol, tool spec, security
 The old in-Studio plugin (`client/`) and the hosted backend (`server/`) still
 work as standalone modes — the local CLI is now the primary surface.
 
+## RoForge Pro
+
+RoForge is **open-core**: the entire agent, all 25 `forge_*` Studio tools,
+and the Pro *entitlement check* are MIT. **RoForge Pro** is a Robux
+game pass (one-time) or monthly dev product that raises limits and unlocks
+advanced features. No account, no subscription to us — ownership is checked
+in Studio via `MarketplaceService`, and the free build keeps working for
+non-Pro users.
+
+| | Free | Pro |
+|---|---|---|
+| Export depth (`forge_export` / `forge_tree`) | 6 | 10 |
+| Import size (`forge_import`) | 500 nodes | 2,500 nodes |
+| Viewport captures | up to 1280×720 | up to 1920×1080 |
+| Cloud snapshots / team workspaces / hosted MCP relay | — | on (closed-source components) |
+
+**Check your status:** `roforge pro` (attaches to a running `roforge studio`
+bridge, or starts a short-lived one). The plugin dock also shows a FREE/PRO
+badge and lets you paste your **Pro Game Pass ID** / **Pro Dev Product ID**
+so ownership checks work.
+
+**Get Pro:** create the products in the **RoForge HQ** experience
+([hq/](hq/) has the starter place + step-by-step), then buy the pass there —
+your Studio session detects it automatically.
+Licensing boundary: [LICENSE-PRO.md](LICENSE-PRO.md) · plan: [docs/MONETIZATION.md](docs/MONETIZATION.md).
+
 ## Status
 
-MVP complete and tested: 58/58 CLI tests (incl. full agent loops against mock
-providers **and the vision image contract**), 21/21 backend tests,
+MVP complete and tested: 86/86 CLI tests (incl. full agent loops against mock
+providers **and the vision image contract**), 21/21 backend tests, 35/35 Pro
+entitlement checks,
 pixel-validated PNG encoder with a from-scratch **RFC 1951 DEFLATE**
 compressor (1024×576 viewport → 103KB, 23× smaller than stored blocks),
 5 model providers with **free-tier auto-routing** (Gemini / Groq / OpenRouter
@@ -147,14 +175,20 @@ Rojo-built `.rbxm` artifacts, offline e2e demo, GitHub Actions CI.
 Latest: viewport vision on **both** tiers (bridge `forge_viewport` and
 Studio's MCP screenshots — the model actually sees Studio), `ChangeHistoryService`
 undo checkpoints, find/bulk-create/snapshot/diff/export/import Studio tools
-(24 `forge_*` total — `forge_import` re-applies an export JSON),
-**multi-block DEFLATE** (streams > 64 KB now inflate byte-exact, with
-per-block dynamic/stored choice), property-level `forge_diff`,
-streaming Markdown + expandable tool output (`/out`) in the TUI, real deflate,
-multi-provider + free tiers, and the **published** `roforge-cli` npm package
-(24 files, zero deps — `npm i -g roforge-cli`). Next: Deflate speed tuning,
-Pro pass-gate (Robux), team features. See `PROGRESS.md` and `docs/MONETIZATION.md`.
+(25 `forge_*` total — `forge_import` re-applies an export JSON, `forge_pro`
+reports the license), **multi-block DEFLATE** (streams > 64 KB now inflate
+byte-exact, with per-block dynamic/stored choice), property-level
+`forge_diff`, streaming Markdown + expandable tool output (`/out`) in the
+TUI, real deflate, multi-provider + free tiers, the **published**
+`roforge-cli` npm package (zero deps — `npm i -g roforge-cli`), and the
+**Pro pass-gate** (free/Pro limits enforced in the plugin, 35-check Luau
+test suite). Next: closed-source Pro features, Deflate speed tuning, team
+features. See `PROGRESS.md` and `docs/MONETIZATION.md`.
 
 ## License
 
-`cli/`, `studio-bridge/`, `client/` — MIT · `server/` — Apache-2.0
+`cli/`, `studio-bridge/`, `hq/`, `client/` — MIT · `server/` — Apache-2.0
+
+Closed-source **RoForge Pro** components (when distributed) are separately
+licensed — see [LICENSE-PRO.md](LICENSE-PRO.md). Contributing:
+[CONTRIBUTING.md](CONTRIBUTING.md).

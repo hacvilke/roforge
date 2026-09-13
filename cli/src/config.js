@@ -188,6 +188,7 @@ export function resolveConfig() {
   if (process.env.ROFORGE_PROVIDER) cfg.provider = process.env.ROFORGE_PROVIDER;
   if (process.env.ROFORGE_MCP_URL) cfg.mcpUrl = process.env.ROFORGE_MCP_URL;
   if (process.env.ROFORGE_BRIDGE_PORT) cfg.bridge.port = Number(process.env.ROFORGE_BRIDGE_PORT);
+  if (process.env.ROFORGE_BRIDGE_TOKEN) cfg.bridge.token = process.env.ROFORGE_BRIDGE_TOKEN;
   if (process.env.ROFORGE_STUDIO_MODE) cfg.studioMode = process.env.ROFORGE_STUDIO_MODE;
   if (process.env.ROFORGE_MAX_ITERATIONS) cfg.maxIterations = Number(process.env.ROFORGE_MAX_ITERATIONS);
   if (process.env.ROFORGE_FREE_FIRST === "0" || process.env.ROFORGE_FREE_FIRST === "false") cfg.freeFirst = false;

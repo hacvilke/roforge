@@ -4,3 +4,4 @@ server/data/
 *.rbxm.bak
 .DS_Store
 trace.json
+bin/

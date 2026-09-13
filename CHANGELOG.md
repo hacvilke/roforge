@@ -3,6 +3,36 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.3 — 2026-09-13
+
+### Added — RoForge Pro pass-gate (open-core monetization, no account needed)
+- **`Pro.lua` entitlement core** (`studio-bridge`): one place defines the
+  free/Pro limits and feature flags. Ownership is checked inside Studio via
+  `MarketplaceService` (game pass + re-purchasable monthly dev product),
+  cached 60s, graceful when the services are unavailable.
+- **Free → Pro limit raises, enforced in the plugin**: export depth 6→10,
+  import 500→2500 nodes, viewport 1280×720→1920×1080. Pro-only feature flags
+  (cloud snapshots, team workspaces, hosted MCP relay) are wired but off
+  until their closed-source components ship (see `LICENSE-PRO.md`).
+- **`forge_pro` tool** (25th `forge_*`, read-only, no approval gate): reports
+  Free/Pro, which pass the Studio user owns, and the active limits.
+- **Bridge dock**: FREE/PRO badge + **Pro Game Pass ID** / **Pro Dev Product
+  ID** fields (persisted in plugin Settings) — paste your ids once and
+  ownership checks just work.
+- **`roforge pro` CLI command**: prints the live license status. Attaches to
+  a running `roforge studio` bridge (new authenticated enqueue/job-status
+  endpoints on the bridge) or starts a short-lived one.
+- **`hq/` starter place**: the RoForge HQ experience — a tiny storefront
+  (one-time pass + monthly dev product buttons) with a step-by-step README
+  for creating the 499 R$ pass and 199 R$/month product in the Creator
+  Dashboard. Builds to `hq/dist/RoForgeHQ.rbxm`.
+- **Repo polish**: `LICENSE-PRO.md` (open-core boundary), `CONTRIBUTING.md`,
+  GitHub issue templates, README Pro section + layout, `ROFORGE_BRIDGE_TOKEN`
+  env override, CI Pro validation step.
+- **Tests**: 35-check Luau Pro suite (`validate_pro.mjs`, runs in CI under
+  standalone luau) + 6 new CLI tests for the attach path — CLI total is now
+  86/86.
+
 ## 0.3.2 — 2026-09-14
 
 ### Fixed

@@ -71,7 +71,7 @@ test("openai renderHistory: no image → no extra user message", () => {
   assert.equal(msgs[0].role, "tool");
 });
 
-test("bridge tools: 24 registered, new shapes + approval gates", async () => {
+test("bridge tools: 25 registered, new shapes + approval gates", async () => {
   const fakeBridge = {
     submit: async (name) => {
       if (name === "forge_viewport") {
@@ -82,7 +82,7 @@ test("bridge tools: 24 registered, new shapes + approval gates", async () => {
     },
   };
   const tools = bridgeTools(fakeBridge);
-  assert.equal(tools.length, 24);
+  assert.equal(tools.length, 25);
   const by = (n) => tools.find((t) => t.name === n);
   for (const n of [
     "forge_viewport",
@@ -97,6 +97,8 @@ test("bridge tools: 24 registered, new shapes + approval gates", async () => {
   assert.equal(by("forge_viewport").requiresApproval, false);
   assert.equal(by("forge_set_property").requiresApproval, true);
   assert.equal(by("forge_set_attribute").requiresApproval, true);
+  assert.ok(by("forge_pro"), "forge_pro registered");
+  assert.equal(by("forge_pro").requiresApproval, false, "forge_pro is read-only");
 
   const img = await by("forge_viewport").execute({});
   assert.equal(typeof img, "object");

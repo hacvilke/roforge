@@ -4,6 +4,7 @@
 
 local Viewport = require(script.Viewport)
 local LocalTools = require(script.LocalTools)
+local Pro = require(script.Pro)
 local Selection = game:GetService("Selection")
 
 local ExtraTools = {}
@@ -560,7 +561,7 @@ local function forgeExport(args)
 	if not inst then
 		return "ERROR: " .. err
 	end
-	local depth = math.min(math.max(tonumber(args.depth) or 3, 1), 6)
+	local depth = math.min(math.max(tonumber(args.depth) or 3, 1), Pro.limit("export_depth"))
 	local ok, json = pcall(function()
 		return HttpService:JSONEncode(exportNode(inst, 1, depth))
 	end)
@@ -577,7 +578,9 @@ end
 -- Re-applies a forge_export JSON: creates the instance tree, sets properties
 -- (with Vector3/Color3/CFrame coercion) and attributes under a parent.
 
-local IMPORT_MAX_NODES = 500
+local function importMaxNodes()
+	return Pro.limit("import_nodes")
+end
 
 local function importNodeCount(node)
 	local n = 1
@@ -694,8 +697,13 @@ local function forgeImport(args)
 		return "ERROR: JSON decode failed: " .. tostring(root)
 	end
 	local nodeCount = importNodeCount(root)
-	if nodeCount > IMPORT_MAX_NODES then
-		return ("ERROR: export has %d nodes; max %d per import — split it up (lower depth or narrower path)"):format(nodeCount, IMPORT_MAX_NODES)
+	local maxNodes = importMaxNodes()
+	if nodeCount > maxNodes then
+		return ("ERROR: export has %d nodes; max %d per import%s — split it up (lower depth or narrower path)"):format(
+			nodeCount,
+			maxNodes,
+			Pro.isPro() and "" or " (free tier; RoForge Pro raises this to 2500)"
+		)
 	end
 	local parentPath = tostring(args.parent or "workspace")
 	local parent, err = LocalTools.resolvePath(parentPath)
@@ -761,6 +769,13 @@ local function forgeImport(args)
 		out[#out + 1] = "root: " .. rootInst:GetFullName()
 	end
 	return table.concat(out, "\n")
+end
+
+-- ---------------- forge_pro ----------------
+-- Reports the current RoForge Pro entitlement (Free/Pro, which pass, and the
+-- active limits/features). The agent calls this to know what the user can do.
+local function forgePro(_args)
+	return Pro.report()
 end
 
 local TOOLS = {
@@ -950,12 +965,13 @@ local TOOLS = {
 	},
 	{
 		name = "forge_export",
-		description = "Export a subtree of the DataModel as JSON: instance properties (position/size/color/etc.), script sources (truncated), and attributes. Defaults to workspace, depth 3 (max 6).",
+		description =
+			"Export a subtree of the DataModel as JSON: instance properties (position/size/color/etc.), script sources (truncated), and attributes. Defaults to workspace, depth 3 (max 6; 10 with RoForge Pro).",
 		input_schema = {
 			type = "object",
 			properties = {
 				path = { type = "string", description = "Dotted path of the subtree root (default: workspace)" },
-				depth = { type = "integer", description = "Tree depth 1-6 (default 3)" },
+				depth = { type = "integer", description = "Tree depth 1-6 (1-10 with RoForge Pro). Default 3." },
 			},
 			additionalProperties = false,
 		},
@@ -966,7 +982,7 @@ local TOOLS = {
 		description =
 			"Apply a forge_export JSON back into Studio: recreates the instance tree (properties, script sources, "
 			.. "attributes) under a parent path. Pass the export text as json, or a plugin-folder file as path. "
-			.. "dry_run=true only reports what would be created. Destructive — max 500 nodes per call.",
+			.. "dry_run=true only reports what would be created. Destructive — max 500 nodes per call (2500 with RoForge Pro).",
 		input_schema = {
 			type = "object",
 			properties = {
@@ -979,6 +995,19 @@ local TOOLS = {
 			additionalProperties = false,
 		},
 		run = forgeImport,
+	},
+	{
+		name = "forge_pro",
+		description =
+			"Report the current RoForge Pro entitlement: Free or Pro, which pass/product the Studio user owns, "
+			.. "and the active limits (export depth, import nodes, viewport) + Pro features. "
+			.. "Call this to know whether the user has Pro before promising Pro-only work.",
+		input_schema = {
+			type = "object",
+			properties = {},
+			additionalProperties = false,
+		},
+		run = forgePro,
 	},
 }
 

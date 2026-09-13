@@ -28,6 +28,7 @@ const BRIDGE_TOOL_NAMES = [
   "forge_diff",
   "forge_export",
   "forge_import",
+  "forge_pro",
 ];
 
 const BRIDGE_DESCRIPTIONS = {
@@ -53,8 +54,9 @@ const BRIDGE_DESCRIPTIONS = {
   forge_bulk_create: "Create many instances in one call (paste-style): items[] of {path: parent path, class_name, name?, properties?}. Destructive.",
   forge_snapshot: "Capture the current instance tree under a name, so forge_diff can show what changed later. Keeps the last 10.",
   forge_diff: "Compare a snapshot to the current instance tree: added (+) and removed (-) instances. Omit name to diff the most recent snapshot.",
-  forge_export: "Export a DataModel subtree as JSON (properties, script sources truncated, attributes). Defaults to workspace, depth 3 (max 6).",
-  forge_import: "Apply a forge_export JSON back into Studio: recreates the instance tree (properties, sources, attributes) under a parent. dry_run=true only reports. Destructive; max 500 nodes.",
+  forge_export: "Export a DataModel subtree as JSON (properties, script sources truncated, attributes). Defaults to workspace, depth 3 (max 6; 10 with RoForge Pro).",
+  forge_import: "Apply a forge_export JSON back into Studio: recreates the instance tree (properties, sources, attributes) under a parent. dry_run=true only reports. Destructive; max 500 nodes (2500 with RoForge Pro).",
+  forge_pro: "Report the current RoForge Pro entitlement: Free or Pro, which pass/product the Studio user owns, and the active limits + Pro features. Call it to know whether the user has Pro.",
 };
 
 const BRIDGE_SCHEMAS = {
@@ -213,6 +215,7 @@ const BRIDGE_SCHEMAS = {
     },
     additionalProperties: false,
   },
+  forge_pro: { type: "object", properties: {}, additionalProperties: false },
 };
 
 // Tools that modify the DataModel — gated by the approval prompt.

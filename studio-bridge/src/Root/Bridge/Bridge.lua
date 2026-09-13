@@ -13,12 +13,17 @@ local Http = require(script.Http)
 local LocalTools = require(script.LocalTools)
 local ExtraTools = require(script.ExtraTools)
 local Viewport = require(script.Viewport)
+local Pro = require(script.Pro)
 
 local Bridge = {}
 
 local Settings = {
 	Url = "http://127.0.0.1:8790",
 	Token = "",
+	-- RoForge Pro entitlement (create both for the "RoForge HQ" experience;
+	-- 0 = not set → the plugin runs on Free tier limits).
+	ProGamePassId = 0,
+	ProDevProductId = 0,
 }
 
 local state = {
@@ -27,6 +32,7 @@ local state = {
 	LastTool = nil,
 	LastResultOk = nil,
 	JobCount = 0,
+	ProLabel = Pro.uiLabel(),
 }
 
 local toolByName = {}
@@ -155,8 +161,11 @@ end
 local statusLabel
 local lastToolLabel
 local jobCountLabel
+local proLabel
 local urlBox
 local tokenBox
+local passIdBox
+local devProductIdBox
 
 local function updateStatusUi()
 	if not statusLabel then
@@ -175,6 +184,15 @@ local function updateStatusUi()
 	if jobCountLabel then
 		jobCountLabel.Text = ("jobs executed: %d"):format(state.JobCount)
 	end
+	if proLabel then
+		state.ProLabel = Pro.uiLabel()
+		proLabel.Text = state.ProLabel
+		if state.ProLabel:sub(1, 3) == "PRO" then
+			proLabel.TextColor3 = Color3.fromRGB(196, 132, 252)
+		else
+			proLabel.TextColor3 = Color3.fromRGB(150, 156, 168)
+		end
+	end
 end
 
 function Bridge.start(plugin)
@@ -191,6 +209,22 @@ function Bridge.start(plugin)
 	if okToken and token then
 		Settings.Token = token
 	end
+
+	-- RoForge Pro pass ids (Creator Dashboard → RoForge HQ experience)
+	local okPass, passId = pcall(function()
+		return plugin:GetSetting("ProGamePassId")
+	end)
+	if okPass and passId and tonumber(passId) then
+		Settings.ProGamePassId = math.floor(tonumber(passId))
+	end
+	local okDev, devId = pcall(function()
+		return plugin:GetSetting("ProDevProductId")
+	end)
+	if okDev and devId and tonumber(devId) then
+		Settings.ProDevProductId = math.floor(tonumber(devId))
+	end
+	Pro.configure({ gamePassId = Settings.ProGamePassId, devProductId = Settings.ProDevProductId })
+	state.ProLabel = Pro.uiLabel()
 
 	-- give the vision capture access to plugin:ReadFile (CaptureScreenshot)
 	Viewport.init(plugin)
@@ -263,6 +297,15 @@ function Bridge.start(plugin)
 		Size = UDim2.new(1, 0, 0, 16),
 		Parent = root,
 	})
+	proLabel = mk("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 12,
+		Text = state.ProLabel,
+		TextColor3 = Color3.fromRGB(150, 156, 168),
+		Size = UDim2.new(1, 0, 0, 16),
+		Parent = root,
+	})
 	local hint = mk("TextLabel", {
 		BackgroundTransparency = 1,
 		Font = Enum.Font.Gotham,
@@ -299,6 +342,30 @@ function Bridge.start(plugin)
 		Text = Settings.Token,
 		Parent = root,
 	})
+	passIdBox = mk("TextBox", {
+		BackgroundColor3 = Color3.fromRGB(32, 35, 42),
+		BorderSizePixel = 0,
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		TextColor3 = Color3.fromRGB(230, 232, 238),
+		PlaceholderText = "Pro Game Pass id (optional, for RoForge Pro)",
+		PlaceholderColor3 = Color3.fromRGB(120, 126, 138),
+		Size = UDim2.new(1, 0, 0, 26),
+		Text = tostring(Settings.ProGamePassId),
+		Parent = root,
+	})
+	devProductIdBox = mk("TextBox", {
+		BackgroundColor3 = Color3.fromRGB(32, 35, 42),
+		BorderSizePixel = 0,
+		Font = Enum.Font.Gotham,
+		TextSize = 12,
+		TextColor3 = Color3.fromRGB(230, 232, 238),
+		PlaceholderText = "Pro Dev Product id (optional, monthly)",
+		PlaceholderColor3 = Color3.fromRGB(120, 126, 138),
+		Size = UDim2.new(1, 0, 0, 26),
+		Text = tostring(Settings.ProDevProductId),
+		Parent = root,
+	})
 	local saveBtn = mk("TextButton", {
 		BackgroundColor3 = Color3.fromRGB(88, 166, 255),
 		BorderSizePixel = 0,
@@ -312,12 +379,21 @@ function Bridge.start(plugin)
 	saveBtn.MouseButton1Click:Connect(function()
 		Settings.Url = (urlBox.Text or ""):trim()
 		Settings.Token = (tokenBox.Text or ""):trim()
+		Settings.ProGamePassId = math.max(0, math.floor(tonumber((passIdBox.Text or ""):trim()) or 0))
+		Settings.ProDevProductId = math.max(0, math.floor(tonumber((devProductIdBox.Text or ""):trim()) or 0))
 		pcall(function()
 			plugin:SetSetting("Url", Settings.Url)
 		end)
 		pcall(function()
 			plugin:SetSetting("Token", Settings.Token)
 		end)
+		pcall(function()
+			plugin:SetSetting("ProGamePassId", tostring(Settings.ProGamePassId))
+		end)
+		pcall(function()
+			plugin:SetSetting("ProDevProductId", tostring(Settings.ProDevProductId))
+		end)
+		Pro.configure({ gamePassId = Settings.ProGamePassId, devProductId = Settings.ProDevProductId })
 		updateStatusUi()
 	end)
 

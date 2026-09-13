@@ -8,6 +8,7 @@
 
 local Selection = game:GetService("Selection")
 local RunService = game:GetService("RunService")
+local Pro = require(script.Pro)
 
 local LocalTools = {}
 
@@ -135,7 +136,7 @@ end
 
 local function forgeTree(args)
 	local rootName = tostring(args.root or "workspace")
-	local maxDepth = math.clamp(tonumber(args.max_depth) or 3, 1, 6)
+	local maxDepth = math.clamp(tonumber(args.max_depth) or 3, 1, Pro.limit("export_depth"))
 	local root = ROOT_NAMES[rootName]
 	if not root then
 		return "ERROR: unknown root '" .. rootName .. "'"
@@ -331,7 +332,7 @@ local TOOLS = {
 					type = "string",
 					description = "Root service: workspace, ServerStorage, ServerScriptService, ReplicatedStorage, Lighting, SoundService, StarterGui, StarterPlayer, StarterPack. Default workspace.",
 				},
-				max_depth = { type = "integer", description = "How deep to go (1-6). Default 3." },
+				max_depth = { type = "integer", description = "How deep to go (1-6, 1-10 with RoForge Pro). Default 3." },
 			},
 			additionalProperties = false,
 		},

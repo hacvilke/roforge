@@ -9,7 +9,7 @@ import { Session } from "../src/session.js";
 import { BridgeServer } from "../src/bridge/server.js";
 import { probeMcp } from "../src/mcp.js";
 import { TUI } from "../src/tui/tui.js";
-import { bold, dim, red, green, cyan, yellow, gray } from "../src/tui/ansi.js";
+import { bold, dim, red, green, cyan, yellow, gray, magenta } from "../src/tui/ansi.js";
 
 const argv = process.argv.slice(2);
 const command = argv[0] || "tui";
@@ -262,6 +262,39 @@ async function main() {
       return;
     }
 
+    case "pro": {
+      const { queryProStatus, renderProStatus, probeBridge, startOwnBridge } = await import("../src/pro.js");
+      const port = flags.port ? Number(flags.port) : cfg.bridge.port;
+      const host = cfg.bridge.host;
+      const token = cfg.bridge.token;
+      const base = `http://${host}:${port}`;
+      console.log(bold("RoForge Pro") + dim(" — license status\n"));
+      // Attach to an already-running bridge (e.g. `roforge studio`);
+      // otherwise start a throwaway one for the plugin to connect to.
+      const health = await probeBridge(base);
+      if (health) {
+        const res = await queryProStatus(null, { port, token, baseUrl: base });
+        console.log(renderProStatus(res, { bold, dim, red, green, magenta, yellow }) + "\n");
+        return;
+      }
+      const bridge = startOwnBridge({ port, host, token });
+      try {
+        await bridge.start();
+      } catch (e) {
+        console.error(red(`bridge could not start on port ${port}: ${e.message}`));
+        process.exit(1);
+      }
+      // The plugin pings every ~1s; give it a moment to show up if it's up.
+      const deadline = Date.now() + 6000;
+      while (!bridge.connected && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      const res = await queryProStatus(bridge, { port, token });
+      console.log(renderProStatus(res, { bold, dim, red, green, magenta, yellow }) + "\n");
+      bridge.stop();
+      return;
+    }
+
     case "help":
     case "--help":
     case "-h": {
@@ -375,6 +408,7 @@ ${bold("Usage")}
   roforge tools               list all tools
   roforge login --provider <p> store a key (gemini|groq|openrouter|anthropic|openai)
   roforge providers           list providers, keys, and auto-routing order
+  roforge pro                 show RoForge Pro license status (needs Studio bridge)
   roforge analyze <file...>   run the official Luau analyzer on files
   roforge config [set k v]    show / set configuration
   roforge version
@@ -389,7 +423,7 @@ ${bold("Model providers (BYOK, zero backend)")}
   auto (default): first configured key wins, free tiers first:
   gemini → groq → openrouter → anthropic → openai
   free tiers: Gemini 2.5 Flash (~1,500 req/day), Groq Llama 3.3 70B (~1,000 req/day),
-  OpenRouter ":free" models (e.g. qwen/qwen3-coder:free)
+  OpenRouter ":free" models (e.g. nvidia/nemotron-3-super-120b-a12b:free)
   pin: --provider <p> or --model <provider>:<model> · ROFORGE_FREE_FIRST=0
 
 ${bold("Config & keys")}

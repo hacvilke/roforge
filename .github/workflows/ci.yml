@@ -34,7 +34,7 @@ jobs:
         run: node demo/e2e-demo.mjs
 
   studio-plugins:
-    name: studio plugins · png validate + analyze + rojo
+    name: studio plugins · png + pro validate + analyze + rojo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,11 +58,15 @@ jobs:
         run: |
           LUAU=$(realpath "$(find bin -type f -name luau | head -1)")
           (cd studio-bridge && node test/validate_deflate.mjs "$LUAU")
+      - name: Pro entitlement — 35 checks via standalone luau
+        run: |
+          LUAU=$(realpath "$(find bin -type f -name luau | head -1)")
+          (cd studio-bridge && node test/validate_pro.mjs "$LUAU")
       - name: luau-analyze — fail only on SyntaxError
         run: |
           LUAU_ANALYZE=$(find bin -type f -name luau-analyze | head -1)
           status=0
-          for f in $(find studio-bridge/src client/src -name '*.lua'); do
+          for f in $(find studio-bridge/src client/src hq/src -name '*.lua'); do
             out=$("$LUAU_ANALYZE" "$f" 2>&1) || true
             if printf '%s' "$out" | grep -q 'SyntaxError'; then
               echo "::error::SYNTAX ERROR in $f"
@@ -72,9 +76,10 @@ jobs:
           done
           echo "analyze gate done (exit $status)"
           exit $status
-      - name: rojo build — bridge + client
+      - name: rojo build — bridge + client + HQ
         run: |
           ROJO=$(find bin -type f -name rojo | head -1)
           "$ROJO" build -o /tmp/RoForgeBridge.rbxm studio-bridge/default.project.json
           "$ROJO" build -o /tmp/RoForge.rbxm client/default.project.json
-          ls -la /tmp/RoForgeBridge.rbxm /tmp/RoForge.rbxm
+          "$ROJO" build -o /tmp/RoForgeHQ.rbxm hq/default.project.json
+          ls -la /tmp/RoForgeBridge.rbxm /tmp/RoForge.rbxm /tmp/RoForgeHQ.rbxm

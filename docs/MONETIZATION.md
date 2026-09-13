@@ -83,11 +83,13 @@ When teams/studios show up (they will — this is a *dev* tool):
 
 1. **Create "RoForge HQ" experience** in Studio (empty lobby is fine),
    publish it.
-2. **Create the Game Pass** (499 R$) + **Developer Product** (199 R$)
-   for it in Creator Dashboard → copy both ids into
-   `studio-bridge/src/Root/Bridge/Settings` (new `ProGamePassId` /
-   `ProDevProductId` fields — the plugin already has a Settings
-   pattern; we wire the check next turn).
+2. **Create the Game Pass** (499 R$) + **Developer Product** (199 R$,
+   re-purchasable) for it in Creator Dashboard → paste both ids into the
+   RoForge Bridge plugin's dock (**Pro Game Pass ID** / **Pro Dev Product
+   ID** → Save). Same ids go into the HQ storefront
+   (`hq/src/StarterPlayer/StarterPlayerScripts/HQ.client.lua`). The
+   `MarketplaceService` ownership check is already wired
+   (`studio-bridge/src/Root/Bridge/Pro.lua`).
 3. **Publish the plugin** (File → Publish to Roblox as a Plugin).
 4. **Enable DevEx** (Creator Dashboard → Payments) so Robux can become
    real money at the 50k R$ threshold.
@@ -95,12 +97,13 @@ When teams/studios show up (they will — this is a *dev* tool):
 
 ## What we build for this (next turns, no account needed)
 
-- [ ] `ProGamePassId`/`ProDevProductId` in bridge Settings + the
+- [x] `ProGamePassId`/`ProDevProductId` in bridge Settings + the
       `MarketplaceService` ownership check + `forge_pro` status tool
-      (reports Free/Pro, which features are active).
-- [ ] `roforge pro` CLI subcommand (prints license status when connected
-      to a Pro-bridged Studio).
-- [ ] HQ experience starter place (a redacted demo the agent can
-      demonstrate on).
-- [ ] GitHub repo polish: `LICENSE` (MIT), `LICENSE-PRO` notice,
-      Contributing, issue templates.
+      (reports Free/Pro, which features are active). → `studio-bridge/src/Root/Bridge/Pro.lua`
+- [x] `roforge pro` CLI subcommand (prints license status when connected
+      to a Pro-bridged Studio; attaches to a running `roforge studio` bridge
+      or starts a throwaway one).
+- [x] HQ experience starter place (`hq/` — storefront buttons for the pass +
+      monthly dev product, README with the dashboard steps).
+- [x] GitHub repo polish: `LICENSE` (MIT), `LICENSE-PRO` notice,
+      `CONTRIBUTING.md`, issue templates, README Pro section.

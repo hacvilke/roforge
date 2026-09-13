@@ -9,10 +9,17 @@
 local Viewport = {}
 
 local Png = require(script.PngEncoder)
+local Pro = require(script.Pro)
 
-local MIN_W, MAX_W = 256, 1280
-local MIN_H, MAX_H = 240, 720
+local MIN_W, MIN_H = 256, 240
 local DEF_W, DEF_H = 1024, 576
+-- Max capture size is a Pro-gated limit: 1280x720 free, 1920x1080 Pro.
+local function maxW()
+	return Pro.limit("viewport_max_width")
+end
+local function maxH()
+	return Pro.limit("viewport_max_height")
+end
 
 local pluginRef = nil
 
@@ -102,8 +109,8 @@ end
 -- on total failure (Bridge normalizes both shapes before posting).
 function Viewport.capture(args)
 	args = type(args) == "table" and args or {}
-	local w = clampDim(args.width, MIN_W, MAX_W, DEF_W)
-	local h = clampDim(args.height, MIN_H, MAX_H, DEF_H)
+	local w = clampDim(args.width, MIN_W, maxW(), DEF_W)
+	local h = clampDim(args.height, MIN_H, maxH(), DEF_H)
 	local failures = {}
 
 	local okA, b64A, whyA = pcall(tryRenderSurfaceTexture, w, h)
