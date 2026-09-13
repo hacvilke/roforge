@@ -3,6 +3,34 @@
 import { createSSE } from "../util.js";
 import { ProviderError } from "./anthropic.js";
 
+// fetch with a per-attempt timeout and ONE automatic retry on network-level
+// failures (UND_ERR_CONNECT_TIMEOUT etc.) — user-initiated aborts are never
+// retried.
+export async function fetchWithRetry(url, opts, { timeoutMs = 60000, retries = 1 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (opts.signal?.aborted) throw lastErr || new ProviderError("aborted");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new Error("timeout")), timeoutMs);
+    const onAbort = () => controller.abort(opts.signal.reason);
+    if (opts.signal) opts.signal.addEventListener("abort", onAbort, { once: true });
+    try {
+      return await fetch(url, { ...opts, signal: controller.signal });
+    } catch (e) {
+      lastErr = e;
+      if (opts.signal?.aborted) break; // user Ctrl+C — don't retry
+      const sig = `${e.cause?.code || ""} ${e.name} ${e.message}`;
+      const isNetwork = /UND_ERR|ECONN|ETIMEDOUT|EAI_AGAIN|EPIPE|EHOSTUNREACH|ENOTFOUND|timeout|aborted/i.test(sig);
+      if (!isNetwork || attempt === retries) break;
+      await new Promise((r) => setTimeout(r, 1200 * (attempt + 1)));
+    } finally {
+      clearTimeout(timer);
+      if (opts.signal) opts.signal.removeEventListener("abort", onAbort);
+    }
+  }
+  throw lastErr;
+}
+
 export async function chatStream(cfg, params, events = {}) {
   const key = cfg.openaiKey;
   if (!key) throw new ProviderError("No OpenAI API key. Run `roforge login` or set OPENAI_API_KEY.");
@@ -17,7 +45,7 @@ export async function chatStream(cfg, params, events = {}) {
 
   let res;
   try {
-    res = await fetch(`${cfg.openaiBaseUrl}/v1/chat/completions`, {
+    res = await fetchWithRetry(`${cfg.openaiBaseUrl}/v1/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,
@@ -27,10 +55,20 @@ export async function chatStream(cfg, params, events = {}) {
       signal: params.signal,
     });
   } catch (e) {
-    throw new ProviderError(`network error calling OpenAI: ${e.cause?.code || e.message}`);
+    throw new ProviderError(
+      `network error calling OpenAI: ${e.cause?.code || e.message} (retried once — if it persists, check your connection)`
+    );
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    // OpenRouter retires free slugs; the 404 body names the paid replacement
+    if (res.status === 404 && /unavailable for free/i.test(text)) {
+      const m = text.match(/use this slug instead:\s*([^\s",}]+)/);
+      throw new ProviderError(
+        `${params.model} was retired from the free tier. Paid slug: ${m ? m[1] : "(see error)"} — ` +
+          "or pick a live free model: https://openrouter.ai/models?max_price=0 (then /model openrouter:<slug>)"
+      );
+    }
     throw new ProviderError(`OpenAI HTTP ${res.status}: ${text.slice(0, 400)}`);
   }
 

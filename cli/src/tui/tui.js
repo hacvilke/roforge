@@ -1,10 +1,17 @@
 // RoForge TUI — Claude-Code-style interactive terminal session.
-// Append-style rendering (terminal scrollback preserved), single status line
-// with a spinner, approval prompts, slash commands, input history.
+// Append-style rendering (terminal scrollback preserved).
+//
+// Two render paths, picked once at startup:
+//   • LIVE (stdout is a TTY): the streaming block (markdown + status line) is
+//     a LiveRegion — rewritten in place every frame, zero flicker, history
+//     committed above it. See frame.js.
+//   • LEGACY (piped output / tests): plain append + \r-spinner, exactly the
+//     pre-LiveRegion behavior.
 import { createRequire } from "node:module";
 import { bold, dim, red, green, yellow, cyan, magenta, gray, wrap, SPINNER_FRAMES, CLEAR_LINE } from "./ansi.js";
 import { parseModelRef, PROVIDERS } from "../config.js";
-import { MarkdownStream } from "./markdown.js";
+import { MarkdownStream, segsToAnsi } from "./markdown.js";
+import { LiveRegion, ATTR } from "./frame.js";
 
 const VERSION = (() => {
   try {
@@ -22,7 +29,7 @@ for (const p of Object.values(PROVIDERS)) {
 }
 
 export class TUI {
-  constructor(session, { out = process.stdout, err = process.stderr } = {}) {
+  constructor(session, { out = process.stdout, err = process.stderr, live } = {}) {
     this.session = session;
     this.out = out;
     this.err = err;
@@ -38,7 +45,16 @@ export class TUI {
     this.spinnerVisible = false;
     this.ctrlCTime = 0;
     this.running = false;
+
+    // LiveRegion (live path). `live` overrides detection (tests).
+    this.live = new LiveRegion((s) => this.out.write(s), { maxRows: 6 });
+    this._liveOK =
+      live === undefined ? Boolean(process.stdout.isTTY) && this.out === process.stdout : live;
     this._md = null; // active MarkdownStream for the current assistant segment
+    this._segLines = []; // completed styled lines for the current segment
+    this._statusLabel = "thinking…";
+    this._costStatus = null; // final cost line for this turn (plain text)
+    this._lastLiveSig = null;
     this._toolOutputs = []; // recent tool outputs, expandable via /out
     this._toolOutSeq = 0;
   }
@@ -85,6 +101,8 @@ export class TUI {
         // Ctrl+C
         if (this.busy) {
           this.session.abort();
+          this._stopSpinner();
+          this._liveCommit();
           this.out.write("\r\n" + yellow("aborted — type a new message or /exit\n"));
           continue;
         }
@@ -220,7 +238,7 @@ export class TUI {
           this.out.write(`model → ${this.session.cfg._activeModel} (${this.session.providerName}${free})\n`);
           if (!ref && !KNOWN_MODELS.has(arg)) {
             this.out.write(
-              dim(`  (unrecognized model name — double-check the spelling, or pin explicitly: /model provider:model, e.g. /model gemini:gemini-2.5-flash)\n`)
+              dim(`  (unrecognized model name — double-check the spelling, or pin explicitly: /model provider:model, e.g. /model gemini:2.5-flash)\n`)
             );
           }
         } else {
@@ -299,12 +317,18 @@ export class TUI {
   async _runTurn(text) {
     this.out.write(dim("you> ") + text + "\n");
     this.busy = true;
-    this._md = null;
+    this._resetSegment();
+    this._costStatus = null;
+    this._lastLiveSig = null;
     try {
       await this.session.send(text);
     } catch (e) {
+      this._stopSpinner();
+      this._liveCommit();
       this.out.write(red(`error: ${e.message || e}`) + "\n");
     }
+    // commit the live block with the final cost line as its status
+    this._liveCommit(this._costStatus ? [{ text: this._costStatus, attr: ATTR.DIM }] : null);
     this.busy = false;
     this._printPrompt();
   }
@@ -314,17 +338,92 @@ export class TUI {
     this.out.write("> ");
   }
 
+  // ---------------- live-region plumbing ----------------
+
+  // Region content for the current assistant segment: completed lines + the
+  // partial line, with the magenta "RoForge> " header on the first
+  // non-empty line (leading blank lines from the model stay blank).
+  _regionLines() {
+    const lines = [...this._segLines];
+    const partial = this._md ? this._md.partialLines() : null;
+    if (partial) lines.push(partial);
+    const first = lines.findIndex((l) => l && l.some((s) => s.text));
+    if (first === -1) return [];
+    lines[first] = [{ text: "RoForge> ", attr: ATTR.MAGENTA }, ...lines[first]];
+    return lines;
+  }
+
+  _statusSegs() {
+    if (this._costStatus) return [{ text: this._costStatus, attr: ATTR.DIM }];
+    const frame = SPINNER_FRAMES[this.spinnerFrame];
+    return [{ text: frame + " " + this._statusLabel, attr: ATTR.DIM }];
+  }
+
+  // Redraw the live region (no-op when nothing changed since the last frame).
+  _liveRefresh() {
+    if (!this._liveOK || !this.live.isActive) return;
+    const lines = this._regionLines();
+    const status = this._statusSegs();
+    const last = lines.length ? lines[lines.length - 1] : null;
+    const sig =
+      lines.length +
+      ":" +
+      (last ? last.map((s) => s.text).join("") : "") +
+      "|" +
+      status.map((s) => s.text).join("");
+    if (sig === this._lastLiveSig) return;
+    this._lastLiveSig = sig;
+    this.live.update(lines, status);
+  }
+
+  // Commit the live block to history. statusSegs = final status line, or null
+  // to commit with a blank one (acts as a separator).
+  _liveCommit(statusSegs = null) {
+    if (!this._liveOK || !this.live.isActive) return;
+    this._finalizeMd();
+    this.live.update(this._regionLines(), statusSegs || []);
+    this.live.release();
+    this._lastLiveSig = null;
+  }
+
+  _finalizeMd() {
+    if (this._md) {
+      const tail = this._md.finishLines();
+      if (tail) this._segLines.push(tail);
+      this._md = null;
+    }
+  }
+
+  // Start a fresh assistant segment (clears streamed content + markdown).
+  // The "running tool" region and gaps between segments show no content, so
+  // the stale block never re-renders in a new region.
+  _resetSegment() {
+    this._md = null;
+    this._segLines = [];
+  }
+
+  // ---------------- spinner ----------------
+
   _startSpinner(label = "thinking…") {
-    if (!process.stdout.isTTY) return;
     this._stopSpinner();
-    this.spinnerVisible = true;
-    this.out.write(label);
-    this.spinnerTimer = setInterval(() => {
-      this.spinnerFrame = (this.spinnerFrame + 1) % SPINNER_FRAMES.length;
-      const len = label.length + 3;
-      this.out.write("\r" + CLEAR_LINE + this.spinnerFrame + " " + label.slice(0, Math.max(0, len - 2)));
-    }, 90);
-    this.spinnerTimer.unref && this.spinnerTimer.unref();
+    this._statusLabel = label;
+    if (this._liveOK) {
+      this.spinnerTimer = setInterval(() => {
+        this.spinnerFrame = (this.spinnerFrame + 1) % SPINNER_FRAMES.length;
+        if (this.live.isActive) this._liveRefresh();
+      }, 90);
+      this.spinnerTimer.unref && this.spinnerTimer.unref();
+      this._liveRefresh();
+    } else if (process.stdout.isTTY) {
+      this.spinnerVisible = true;
+      this.out.write(label);
+      this.spinnerTimer = setInterval(() => {
+        this.spinnerFrame = (this.spinnerFrame + 1) % SPINNER_FRAMES.length;
+        const len = label.length + 3;
+        this.out.write("\r" + CLEAR_LINE + this.spinnerFrame + " " + label.slice(0, Math.max(0, len - 2)));
+      }, 90);
+      this.spinnerTimer.unref && this.spinnerTimer.unref();
+    }
   }
 
   _stopSpinner() {
@@ -340,32 +439,42 @@ export class TUI {
 
   // ---------------- ui event sink (Session) ----------------
 
-  _flushMd() {
-    if (this._md) {
-      const tail = this._md.finish();
-      if (tail) this.out.write(tail);
-      this._md = null;
-    }
-  }
-
   onText(delta) {
     this._stopSpinner();
-    if (!this._assistantHeaderShown) {
-      this.out.write(magenta("RoForge> ") );
-      this._assistantHeaderShown = true;
-    }
     if (!this._md) this._md = new MarkdownStream();
-    const rendered = this._md.push(delta);
-    if (rendered) this.out.write(rendered);
+    const newLines = this._md.pushLines(delta);
+    for (const l of newLines) this._segLines.push(l);
+    if (this._liveOK) {
+      if (!this.live.isActive) this.live.begin();
+      this._liveRefresh();
+    } else {
+      if (!this._assistantHeaderShown) {
+        this.out.write(magenta("RoForge> "));
+        this._assistantHeaderShown = true;
+      }
+      if (newLines.length) this.out.write(newLines.map(segsToAnsi).join("\n") + "\n");
+    }
   }
 
   onAssistantDone() {
-    this._flushMd();
+    if (this._md) {
+      const tail = this._md.finishLines();
+      this._md = null;
+      if (tail) {
+        if (this._liveOK) {
+          this._segLines.push(tail);
+          this._liveRefresh();
+        } else {
+          this.out.write(segsToAnsi(tail) + "\n");
+        }
+      }
+    }
   }
 
   onToolStart(tool, args) {
     this._stopSpinner();
-    this._flushMd();
+    this._liveCommit(); // assistant block → history (blank separator)
+    this._resetSegment(); // running region shows status only, no content
     let argsStr;
     try {
       argsStr = JSON.stringify(args || {});
@@ -377,7 +486,8 @@ export class TUI {
     this._toolOutputs.push({ id: this._toolOutSeq, tool: tool.name, args: argsStr, full: "" });
     if (this._toolOutputs.length > 30) this._toolOutputs.shift();
     this.out.write(dim(`  ⚙ [${this._toolOutSeq}] ${tool.name}(${argsStr})`) + "\n");
-    this._startSpinner(dim("running " + tool.name + "…"));
+    if (this._liveOK) this.live.begin();
+    this._startSpinner("running " + tool.name + "…");
   }
 
   onToolEnd(tool, args, result) {
@@ -385,6 +495,8 @@ export class TUI {
     const r = String(result || "");
     const last = this._toolOutputs[this._toolOutputs.length - 1];
     if (last && last.tool === tool.name) last.full = r;
+    this._liveCommit(); // "running…" block → history
+    this._resetSegment(); // next assistant text starts a fresh segment
     const first = r.split("\n")[0].slice(0, 120);
     const more = (r.length > 120 || r.includes("\n")) && last ? dim(` (more: /out ${last.id})`) : "";
     if (r.startsWith("ERROR")) {
@@ -392,27 +504,45 @@ export class TUI {
     } else {
       this.out.write(dim(`    ↳ ${first}`) + more + "\n");
     }
+    if (this._liveOK) this.live.begin();
     this._startSpinner("thinking…");
   }
 
   onInfo(msg) {
     this._stopSpinner();
+    this._liveCommit();
     this.out.write(gray(msg) + "\n");
   }
 
   onWarn(msg) {
     this._stopSpinner();
+    this._liveCommit();
     this.out.write(red(msg) + "\n");
   }
 
   onStatus(msg) {
-    // Only the per-turn cost footer is printed here; the spinner covers
-    // "thinking…" and tool progress is shown on its own lines.
-    if (String(msg).includes("tok")) this.out.write("\n" + gray(msg) + "\n");
+    const m = String(msg);
+    if (m.includes("tok")) {
+      // per-turn cost footer — becomes the live block's final status line
+      this._costStatus = m;
+      if (this._liveOK && this.live.isActive) {
+        this._stopSpinner();
+        this._liveRefresh();
+      } else if (!this._liveOK) {
+        this.out.write("\n" + gray(m) + "\n");
+      }
+      return;
+    }
+    // "thinking… (step n/total)" / "done" → live status label
+    if (this._liveOK && this.live.isActive) {
+      this._statusLabel = m === "done" ? "finishing…" : m;
+      this._liveRefresh();
+    }
   }
 
   async promptApproval(name, args) {
     this._stopSpinner();
+    this._liveCommit();
     let target = "";
     try {
       target = JSON.stringify(args || {});
@@ -421,7 +551,9 @@ export class TUI {
     }
     if (target.length > 100) target = target.slice(0, 97) + "…";
     this.out.write(yellow(`  ✋ approve ${name}(${target})? `) + dim("[y]es / [n]o / [a]lways "));
-    return await this._readChar();
+    const ans = await this._readChar();
+    this.out.write("\n"); // next output starts on a fresh line
+    return ans;
   }
 
   _readChar() {
@@ -476,6 +608,15 @@ export class TUI {
     if (process.stdin.isTTY) {
       this._setRaw(true);
       process.stdin.on("data", (c) => this._onData(c));
+      if (this._liveOK) {
+        this._onResize = () => {
+          if (this.live.isActive) {
+            this.live.eraseOnResize();
+            this._lastLiveSig = null;
+          }
+        };
+        process.stdout.on("resize", this._onResize);
+      }
       this._printPrompt();
       return true;
     }
@@ -487,6 +628,11 @@ export class TUI {
   stop() {
     this.running = false;
     this._stopSpinner();
+    this._liveCommit();
+    if (this._onResize) {
+      process.stdout.removeListener("resize", this._onResize);
+      this._onResize = null;
+    }
     this._setRaw(false);
     process.stdin.removeAllListeners("data");
   }

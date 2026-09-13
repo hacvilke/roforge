@@ -3,6 +3,50 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.2 — 2026-09-14
+
+### Fixed
+- **Free default model was dead** — the shipped free slug (`qwen/qwen3-coder:free`)
+  was retired from OpenRouter's free tier, so a fresh install with only a free
+  OpenRouter key hit a 404. New default: `nvidia/nemotron-3-super-120b-a12b:free`,
+  verified live (public models API + real tool-calling request). A comment in
+  `config.js` documents the free-tier churn and where to find live slugs.
+- **Flaky first request could kill a turn** — OpenAI-compatible requests
+  (OpenAI + OpenRouter) now use a 60s per-attempt timeout with one automatic
+  retry on network-level failures (`UND_ERR_CONNECT_TIMEOUT`, DNS, EPIPE…).
+  Ctrl+C aborts are never retried.
+- **Retired free slug 404s** now say exactly what happened and what to do:
+  the paid replacement slug (parsed from OpenRouter's body) plus the
+  `?max_price=0` list for live free models.
+
+### Added — flicker-free TUI ("live region")
+The terminal UI now renders the active assistant block as a **LiveRegion**:
+a small bottom block that is rewritten in place (one write per frame, no
+intermediate clears) while everything committed above it stays put — the
+same framebuffer/differ idea behind Claude Code's TUI, sized to preserve the
+terminal scrollback instead of owning the whole screen.
+- Streaming markdown updates in place; the growing partial line is rewritten
+  without touching committed lines.
+- Status line (spinner + step label + cost) lives on the region's last row
+  and updates without scrolling.
+- Tool cards, approvals, and results commit to history as they happen; each
+  assistant segment gets its own `RoForge>` header.
+- Terminal resize erases and re-renders the region (no stale-width artifacts).
+- Piped/non-TTY output keeps the legacy append rendering (auto-detected).
+- Correctness is pinned by a fake-terminal test suite (screen grid + cursor +
+  scroll simulation): in-place rewrite, scroll-at-screen-bottom invariant,
+  release/commit, sameLine header, resize erase, word-aware styled wrapping
+  incl. hard-broken long words — plus an end-to-end TUI turn test and a
+  real-PTY smoke driver (`cli/scratch/pty-smoke.mjs`).
+
+### Changed
+- Markdown renderer now emits styled segments (heading bold, bullets cyan,
+  numbered dim, quotes dim, inline code cyan, **bold** bold); the legacy
+  string output is generated from the same segments, so piped output looks
+  identical.
+- Config tests assert the free model via `PROVIDERS.openrouter.freeModel`
+  instead of pinning a slug (free tier churns).
+
 ## 0.3.1 — 2026-09-13
 
 ### Fixed (from the first real Windows install)

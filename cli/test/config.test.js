@@ -36,7 +36,11 @@ test("config: env-var-style keys are imported from anywhere in the file", async 
       assert.equal(cfg.openrouterKey, "sk-or-v1-test123", "nested OPENROUTER_API_KEY imported");
       assert.ok(cfg.bridge.token.startsWith("e715e31c"), "bridge token preserved");
       assert.equal(m.effectiveProvider(cfg), "openrouter", "auto routes to the provider that has a key");
-      assert.equal(m.modelFor(cfg), "qwen/qwen3-coder:free", "free-tier model picked in auto mode");
+      assert.equal(
+        m.modelFor(cfg),
+        m.PROVIDERS.openrouter.freeModel,
+        "free-tier model picked in auto mode"
+      );
     }
   );
 });

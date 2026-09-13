@@ -46,7 +46,10 @@ export const PROVIDERS = {
     env: "OPENROUTER_API_KEY",
     baseField: "openrouterBaseUrl",
     defaultModel: "qwen/qwen3-coder",
-    freeModel: "qwen/qwen3-coder:free", // :free models: req/day limit, no billing
+    // Free tier rotates — this is the live free model verified 2026-09-13
+    // via the public OpenRouter models API + a real request. When it dies,
+    // check https://openrouter.ai/models?max_price=0 and update here.
+    freeModel: "nvidia/nemotron-3-super-120b-a12b:free",
     hasFreeTier: true,
   },
   anthropic: {
@@ -114,7 +117,8 @@ const DEFAULTS = {
     "gpt-4o": { input: 2.5, output: 10 },
     "gemini-2.5-flash": { input: 0, output: 0 },
     "llama-3.3-70b-versatile": { input: 0, output: 0 },
-    "qwen/qwen3-coder:free": { input: 0, output: 0 },
+    "nvidia/nemotron-3-super-120b-a12b:free": { input: 0, output: 0 },
+    "nvidia/nemotron-3-ultra-550b-a55b:free": { input: 0, output: 0 },
   },
 };
 

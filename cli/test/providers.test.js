@@ -127,12 +127,13 @@ test("openrouter: routes through its own key + base URL", async () => {
     openrouterKey: "or-key",
     openrouterBaseUrl: `http://127.0.0.1:${server.address().port}`,
   };
-  const r = await openrouterChat(cfg, { model: "qwen/qwen3-coder:free", messages: [{ role: "user", text: "hi" }] }, {});
+  const model = PROVIDERS.openrouter.freeModel;
+  const r = await openrouterChat(cfg, { model, messages: [{ role: "user", text: "hi" }] }, {});
   assert.equal(r.toolCalls.length, 1);
   assert.equal(r.toolCalls[0].name, "echo");
   const req = server.lastRequest;
   assert.equal(req.headers.authorization, "Bearer or-key");
-  assert.equal(req.body.model, "qwen/qwen3-coder:free");
+  assert.equal(req.body.model, model);
   assert.equal(req.url, "/v1/chat/completions");
   server.close();
 });
@@ -175,7 +176,7 @@ test("auto: free-tier priority gemini > groq > openrouter", () => {
   assert.equal(effectiveProvider(resolveConfig()), "groq");
   setEnv({ GROQ_API_KEY: null, OPENROUTER_API_KEY: "o", ANTHROPIC_API_KEY: "a" });
   assert.equal(effectiveProvider(resolveConfig()), "openrouter");
-  assert.equal(modelFor(resolveConfig()), "qwen/qwen3-coder:free");
+  assert.equal(modelFor(resolveConfig()), PROVIDERS.openrouter.freeModel);
 });
 
 test("auto: paid-only keys still work", () => {
