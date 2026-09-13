@@ -17,7 +17,7 @@ that way (no npm installs, no new build steps you can't run offline).
 Run from the repo root (each step is a subshell, so order doesn't matter):
 
 ```sh
-# 1. CLI tests (86 tests: agent loops, providers, bridge, TUI, pro)
+# 1. CLI tests (94 tests: agent loops, providers, bridge, TUI, pro, plugin install)
 (cd cli && npm test)
 
 # 2. Offline end-to-end demo

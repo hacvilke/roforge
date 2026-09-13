@@ -303,11 +303,14 @@ export class TUI {
     else lines.push(`${red("○")} studio MCP (built-in): not reachable @ ${this.session.cfg.mcpUrl}` + dim(" (File → Studio Settings → Beta Features → MCP Server)"));
     if (this.session.bridgeServer) {
       const b = this.session.bridgeServer;
-      lines.push(
-        b.connected
-          ? `${green("●")} bridge plugin: connected (http://${b.host}:${b.port})`
-          : `${yellow("○")} bridge plugin: waiting for Studio (http://${b.host}:${b.port})`
-      );
+      if (b.connected) {
+        lines.push(`${green("●")} bridge plugin: connected (http://${b.host}:${b.port})`);
+      } else {
+        lines.push(
+          `${yellow("○")} bridge plugin: waiting for Studio (http://${b.host}:${b.port})` +
+            dim(` — run \`roforge install-plugin\` if not installed; token to paste in the plugin dock: ${b.token}`)
+        );
+      }
     }
     return lines.join("\n");
   }

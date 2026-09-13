@@ -9,6 +9,8 @@
 | `roforge` | Interactive TUI (starts the local bridge on 127.0.0.1:8790) |
 | `roforge chat -m "prompt"` | One-shot mode; streams answer to stdout, tool trace to stderr |
 | `roforge studio` | Keeps the bridge running + shows MCP/bridge connection status + the bridge token |
+| `roforge install-plugin [bridge\|client]` | Copy the bundled `.rbxm` into Studio's plugins folder (`--list` shows the target dir) |
+| `roforge pro` | Print RoForge Pro license status (attaches to a running bridge, or starts one) |
 | `roforge tools` | List all tools (tier + approval flags) |
 | `roforge login --provider <p>` | Store a key (gemini\|groq\|openrouter\|anthropic\|openai) in `~/.roforge/config.json` (0600) |
 | `roforge providers` | List providers, which keys are set, and the auto-routing order |

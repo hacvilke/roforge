@@ -88,31 +88,35 @@ Connecting Studio (pick one):
 1. **Built-in MCP (recommended).** Studio → File → Studio Settings → Beta
    Features → enable **MCP Server** (listens on `localhost:3004`). RoForge
    detects it automatically — `/studio` in the TUI shows the status.
-2. **RoForge Bridge plugin.** Build, install, then paste the token:
+2. **RoForge Bridge plugin** (not in the Roblox Toolbox — it ships with
+   roforge). Install, then paste the token:
    ```bash
-   cd studio-bridge && rojo build -o dist/RoForgeBridge.rbxm   # already built in dist/
-   node scripts/install-plugin.mjs bridge   # copies dist into your OS plugins folder
-   # …or Studio: File → Plug-ins → Manage → install dist/RoForgeBridge.rbxm
-   node cli/bin/roforge.js studio   # keeps the bridge running, prints the token
-   # in Studio: RoForge Bridge → paste token → Save & connect
+   roforge install-plugin        # copies the bundled .rbxm into Studio's plugins folder
+   roforge studio                # keeps the bridge running, prints the token
+   # in Studio: File → Plugins (RoForge Bridge is listed) → paste token → Save
    ```
+   From a git clone instead: `node scripts/install-plugin.mjs bridge`, or
+   Studio → Manage Plugins → *Install File…* with
+   `studio-bridge/dist/RoForgeBridge.rbxm` (prebuilt, committed).
 
 Commands: `roforge` (TUI) · `chat -m "…"` · `studio` · `tools` ·
-`pro` (license status) · `login --provider <p>` · `providers` ·
-`analyze <file…>` · `config [set k v]` · `version`. Full usage: `docs/CLI.md`.
+`install-plugin` · `pro` (license status) · `login --provider <p>` ·
+`providers` · `analyze <file…>` · `config [set k v]` · `version`.
+Full usage: `docs/CLI.md`.
 
 ## Repository layout
 
 ```
 cli/           MIT — the local agent (Node, zero deps)
-  bin/roforge.js          CLI entry (TUI / chat / studio / pro / tools / login / analyze)
+  bin/roforge.js          CLI entry (TUI / chat / studio / pro / install-plugin / tools / login / analyze)
   src/providers/          anthropic · openai · gemini · groq · openrouter (SSE) adapters
   src/mcp.js              MCP Streamable-HTTP client (talks to Studio's server)
   src/bridge/             local loopback bridge server (polling protocol)
   src/tools/              web, roblox, project, studio tool factories
   src/agent.js            the agent loop
   src/tui/                terminal UI (ANSI, zero deps)
-  test/                   86 tests incl. full agent loop + provider routing + vision on both tiers
+  test/                   94 tests incl. full agent loop + provider routing + vision on both tiers
+  dist/                   prebuilt .rbxm plugins (bundled into the npm package)
   demo/e2e-demo.mjs       offline end-to-end demo
 studio-bridge/ MIT — thin Studio plugin (Luau) that polls the bridge
   src/Root/Bridge/        Bridge loop, LocalTools, ExtraTools, Viewport, PngEncoder, Pro
@@ -164,7 +168,7 @@ Licensing boundary: [LICENSE-PRO.md](LICENSE-PRO.md) · plan: [docs/MONETIZATION
 
 ## Status
 
-MVP complete and tested: 86/86 CLI tests (incl. full agent loops against mock
+MVP complete and tested: 94/94 CLI tests (incl. full agent loops against mock
 providers **and the vision image contract**), 21/21 backend tests, 35/35 Pro
 entitlement checks,
 pixel-validated PNG encoder with a from-scratch **RFC 1951 DEFLATE**

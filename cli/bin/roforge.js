@@ -262,6 +262,33 @@ async function main() {
       return;
     }
 
+    case "install-plugin": {
+      const { PLUGINS, findPluginSource, installPlugin, pluginsDir } = await import("../src/install.js");
+      const which = (flags._pos && flags._pos[0]) || "bridge";
+      if (flags.list || flags.l) {
+        console.log(bold("Roblox Studio plugins folder:") + ` ${pluginsDir()}`);
+        return;
+      }
+      if (!PLUGINS[which]) {
+        console.error(red(`unknown plugin: ${which} (expected: ${Object.keys(PLUGINS).join(" | ")})`));
+        process.exit(1);
+      }
+      const src = findPluginSource(which);
+      if (!src) {
+        console.error(red("no built plugin found in this install."));
+        console.error(dim("  from a git clone: rojo build -o studio-bridge/dist/RoForgeBridge.rbxm studio-bridge/default.project.json"));
+        process.exit(1);
+      }
+      const { dest } = installPlugin(which);
+      console.log(bold("RoForge plugin installed") + dim(" — " + PLUGINS[which].desc + "\n"));
+      console.log(`  ${green("✓")} ${src}\n  →  ${dest}\n`);
+      console.log(bold("Next:"));
+      console.log("  1. start (or restart) Roblox Studio");
+      console.log("  2. File → Plugins → Manage Plugins — " + which + " is now listed");
+      console.log("  3. run `roforge studio` (or the TUI) and paste the printed token into the plugin dock");
+      return;
+    }
+
     case "pro": {
       const { queryProStatus, renderProStatus, probeBridge, startOwnBridge } = await import("../src/pro.js");
       const port = flags.port ? Number(flags.port) : cfg.bridge.port;
@@ -408,6 +435,7 @@ ${bold("Usage")}
   roforge tools               list all tools
   roforge login --provider <p> store a key (gemini|groq|openrouter|anthropic|openai)
   roforge providers           list providers, keys, and auto-routing order
+  roforge install-plugin      install the RoForge Bridge plugin into Studio
   roforge pro                 show RoForge Pro license status (needs Studio bridge)
   roforge analyze <file...>   run the official Luau analyzer on files
   roforge config [set k v]    show / set configuration
@@ -416,8 +444,9 @@ ${bold("Usage")}
 ${bold("How it connects to Studio")}
   1. Built-in MCP (recommended): Studio → File → Studio Settings → Beta Features →
      ${bold("MCP Server")} — roforge talks to it at http://localhost:3004/mcp automatically.
-  2. RoForge Bridge plugin: install studio-bridge/dist/RoForgeBridge.rbxm into Studio,
-     paste the bridge token (shown by ${bold("roforge studio")}) into the plugin.
+  2. RoForge Bridge plugin (not in the Roblox Toolbox — install from here):
+     ${bold("roforge install-plugin")}  →  Studio: File → Plugins (it's now listed)
+     then paste the bridge token (shown by ${bold("roforge studio")}) into the plugin dock.
 
 ${bold("Model providers (BYOK, zero backend)")}
   auto (default): first configured key wins, free tiers first:

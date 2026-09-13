@@ -60,7 +60,18 @@ export class Session {
     if (this.studioInfo.bridge) studio.push("The RoForge Bridge plugin is available (forge_* tools) — it connects when Studio is open and the bridge plugin is active.");
     const caps = (this.studioInfo.mcpCapture || []).map((n) => `studio_${n}`).join(", ");
     if (caps) studio.push(`Studio's MCP exposes vision tools (${caps}) — they return an image you can SEE; prefer them for visual checks.`);
-    if (!studio.length) studio.push("No Studio connection yet — forge_* tools will error until Studio is open with the RoForge Bridge plugin (or enable Studio's built-in MCP beta).");
+    if (!studio.length) {
+      studio.push(
+        "No Studio connection yet — forge_* tools will error until Studio is connected. " +
+          "If the user asks how to connect, give EXACTLY these steps (do not invent others — the RoForge " +
+          "Bridge plugin is NOT in the Roblox Toolbox): (1) run `roforge install-plugin` to install the " +
+          "bundled plugin into Studio's plugins folder, or in Studio use File → Plugins → Manage Plugins → " +
+          "Install File… with studio-bridge/dist/RoForgeBridge.rbxm from https://github.com/hacvilke/roforge; " +
+          "(2) open the RoForge Bridge dock and paste the bridge token shown by `roforge studio` (or in this " +
+          "TUI's /studio output); (3) the status turns green when connected. Alternative: enable Studio's " +
+          "built-in MCP (File → Studio Settings → Beta Features → MCP Server) — no plugin needed."
+      );
+    }
 
     return `You are RoForge, a local AI agent for Roblox development, running on the user's machine (Claude-Code-style). You work on two surfaces:
 

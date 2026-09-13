@@ -3,6 +3,32 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.4 — 2026-09-13
+
+### Added — "where do I get the plugin?" is now a one-liner
+- **`roforge install-plugin [bridge|client]`** — copies the built `.rbxm`
+  straight into your OS Roblox Studio plugins folder (Windows:
+  `%LOCALAPPDATA%\Roblox\Plugins`, macOS: `~/Documents/Roblox/Plugins`,
+  Linux: `~/.local/share/Roblox/Plugins`). `--list` shows the target dir.
+- **The plugin now ships inside the npm package** (`cli/dist/*.rbxm`), so
+  `npm i -g roforge-cli && roforge install-plugin` works with no git clone
+  and no rojo. A test keeps the bundled `.rbxm` byte-identical to the repo
+  build.
+
+### Fixed
+- **TUI now shows the bridge token** while waiting for Studio (the `/studio`
+  line and the startup banner) — previously only `roforge studio` printed it,
+  so TUI users had no token to paste into the plugin dock.
+- **The agent no longer invents connection steps** — the system prompt now
+  tells it the exact install path and that the RoForge Bridge plugin is *not*
+  in the Roblox Toolbox (it's installed from the bundled `.rbxm`).
+- Help / README / docs: "not in the Toolbox" spelled out in every place that
+  explains connecting Studio.
+
+### Tests
+- 8 new tests (plugin install: per-OS target dirs, source resolution, copy
+  behavior, npm↔repo parity, TUI token visibility) — CLI total **94/94**.
+
 ## 0.3.3 — 2026-09-13
 
 ### Added — RoForge Pro pass-gate (open-core monetization, no account needed)
