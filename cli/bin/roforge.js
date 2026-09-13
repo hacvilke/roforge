@@ -270,6 +270,15 @@ async function main() {
         return;
       }
       if (!PLUGINS[which]) {
+        // People copy-paste doc lines with the shell comment included (cmd
+        // treats "::" as an argument, not a comment). Catch that specifically.
+        const looksPasted = /^[:;#]/.test(which) || which.includes("\u2192") || which.includes(" ");
+        if (looksPasted) {
+          console.error(red(`it looks like a shell comment or extra text got pasted in: "${which}"`));
+          console.error("run just this (nothing after it):");
+          console.log(bold("  roforge install-plugin"));
+          process.exit(1);
+        }
         console.error(red(`unknown plugin: ${which} (expected: ${Object.keys(PLUGINS).join(" | ")})`));
         process.exit(1);
       }

@@ -3,6 +3,14 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.8 — 2026-09-13
+
+### Fixed
+- **`roforge install-plugin` paste-in comment:** copying a doc line with its
+  trailing `:: comment` (cmd.exe passes `::` as an argument) used to fail
+  with a cryptic `unknown plugin: ::`. The CLI now detects the pasted
+  comment/arrow and prints exactly what to run instead.
+
 ## 0.3.7 — 2026-09-13
 
 ### Security hardening (massive battery — 51 new checks, all green)
