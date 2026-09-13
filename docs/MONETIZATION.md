@@ -1,109 +1,69 @@
-# RoForge monetization — open-core, Robux-first
+# RoForge Pro — monetization
 
-Goal: keep the project **primarily open source and free**, while earning a
-small, honest commission in Robux to fund continued work.
+RoForge has one paid product: **RoForge Pro**, a Robux unlock. Everything
+else in the repo — the CLI, the bridge plugin, all 25 `forge_*` tools, the
+HQ starter place — is MIT, free, and stays that way.
 
-## The model: open-core
+## What Pro is
 
-| Layer | License / price | What it is |
+A **game pass** (one-time) or a **monthly developer product** (repeatable),
+sold inside the **RoForge HQ** experience — Robux passes and products must
+live in an experience, which is why the HQ exists. Owning either makes your
+Studio session Pro. The purchase is a normal Roblox transaction; there is no
+account with the maintainer, no separate checkout.
+
+| Product | Type | Price |
 |---|---|---|
-| `cli/` (npm `roforge-cli`) | MIT, **free forever** | The whole local agent, all 24 `forge_*` tools, all 5 providers incl. free tiers |
-| `studio-bridge/` plugin | MIT, **free forever** | Full Studio bridge — nothing gated inside the free path |
-| `client/` in-Studio chat | MIT, **free** | Original BYOK chat plugin |
-| `server/` hosted backend | MIT (open), self-hostable | The optional sync/hosting layer |
-| **RoForge Pro** | Proprietary, paid in Robux | Closed-source module + hosted convenience features, gated by Game Pass / Developer Product |
+| RoForge Pro | Game Pass | 499 R$ (one-time) |
+| Pro month | Developer Product | 199 R$ (repeatable — Roblox has no subscriptions, so the monthly option is a re-purchase) |
 
-Principle: **the free tier is the product.** A dev who never pays gets a
-complete, zero-cost toolchain (BYOK + free-tier models = $0/mo). Pro is
-*convenience and collaboration*, not a paywall on core features.
+Roblox takes 30%: 499 R$ → ~349 R$ → ~$1.33 via DevEx (≈ $0.0038/R$,
+18+, 50k R$ minimum cash-out). Playing the HQ experience while subscribed to
+Premium also generates the standard Premium payouts.
 
-## Channel A — Hub experience + passes (primary Robux stream)
+## What Pro changes
 
-Create one small experience — **"RoForge HQ"** — a clean lobby that:
+The free tier is complete — full agent, all tools, $0 to run with free-tier
+model keys. Pro changes limits and enables the Pro components:
 
-1. shows the tool in action (a live demo place the agent edits in real time),
-2. links to the GitHub repo, npm install, and devforum thread,
-3. hosts the monetization (Roblox passes *must* live inside an experience).
+| | Free | Pro |
+|---|---|---|
+| Export depth (`forge_export` / `forge_tree`) | 6 | 10 |
+| Import size (`forge_import`) | 500 nodes | 2,500 nodes |
+| Viewport capture | up to 1280×720 | up to 1920×1080 |
+| Cloud snapshots · team workspaces · hosted MCP relay | — | enabled |
 
-Monetization in it:
+The limit differences are enforced in the open plugin
+(`Pro.lua` → `Pro.limit()`). The three Pro features are closed-source
+components (marked `RoForge Pro (closed-source component)` when shipped —
+terms in `LICENSE-PRO.md`); until they ship, their flags are off and Pro =
+raised limits. The entitlement check itself is MIT in either case.
 
-- **Game Pass "RoForge Pro"** — one-time, e.g. **499 R$** → unlocks Pro
-  features (see below).
-- **Developer Product "Pro month"** — e.g. **199 R$/month** (repeatable
-  purchase; Roblox has no auto-subscriptions, so Pro features also stay
-  unlocked by the pass — the product is for those who prefer monthly).
-- **Premium Payouts** — free anyway: anyone who plays the HQ experience
-  while subscribed to Premium generates passive payout.
+## How the check works
 
-**Split: Roblox takes 30%, you keep 70%** of pass/product sales.
-499 R$ pass → ~349 R$ to you → ~$1.33 via DevEx (≈ $0.0038/R$, 18+, min
-50k R$ cash-out). It's a small per-unit number — the volume and the
-*audience* (devs with projects to build) are the point.
+- The plugin dock stores two ids — **Pro Game Pass ID** / **Pro Dev Product
+  ID** — in its Settings (persisted with the plugin).
+- `studio-bridge/src/Root/Bridge/Pro.lua` checks ownership with
+  `MarketplaceService` (game pass + `Passes:PurchasedProductAsync` for the
+  dev product), cached 60s. `Pro.isPro()` and `Pro.report()` feed the dock's
+  FREE/PRO badge and the `forge_pro` tool.
+- The CLI only renders the report: `roforge pro`.
 
-### What Pro gates (proposed — none of it touches the local/free path)
+## Setup (one-time, on the Roblox account)
 
-- **Cloud snapshots**: back up instance trees to your hosted backend,
-  restore from any machine (free tier: last 10 local snapshots only).
-- **Team workspaces**: share a place + checkpoints with a dev team
-  (uses the `server/` you already have).
-- **Raised limits**: export depth 6→10, import nodes 500→2500,
-  viewport capture up to 1920×1080.
-- **Pro MCP endpoint**: hosted, always-on Studio bridge relay (no local
-  port forwarding).
+1. Publish the **RoForge HQ** experience from the `hq/` starter place
+   (`hq/README.md` walks through it).
+2. Creator Dashboard → Passes & Products: create the **499 R$ game pass** and
+   the **199 R$ dev product** (re-purchasable) → paste both ids into the
+   plugin dock and into the HQ storefront
+   (`hq/src/StarterPlayer/StarterPlayerScripts/HQ.client.lua`).
+3. Publish the bridge plugin (File → Publish to Roblox as a Plugin).
+4. Enable DevEx (Creator Dashboard → Payments) to cash out at 50k R$.
+5. Optional: make the Toolbox copy of the plugin **premium-only** — Premium
+   subscribers who use the asset generate passive payouts.
 
-### How the gate works (technical)
+## Beyond Robux
 
-- Open plugin reads two config ids at startup (GamePassId,
-  DeveloperProductId).
-- `MarketplaceService:UserOwnsGamePassAsync(userId, PRO_PASS_ID)` →
-  `state.Pro = true` (plus the dev-product ownership check).
-- If Pro: the plugin `require`s a **separate closed-source ModuleScript**
-  (published as its own asset, embedded only in a *Pro build* of the
-  plugin) that implements the cloud/team features.
-- The open repo contains **zero** pro code — only the pass check and a
-  "you're on Free" notice. Open-core, not obfuscated-core.
-
-## Channel B — Premium-only Toolbox plugin (passive)
-
-Publish the Studio plugin asset as **premium-only**. When a Roblox Premium
-subscriber uses your asset in a place, Roblox allocates a share of that
-subscriber's monthly Premium payout to you. Small, passive, and a great
-discovery channel (Toolbox search). The free CLI + GitHub repo stay the
-real product; the Toolbox copy is the same code.
-
-## Channel C — real money, later (outside Roblox)
-
-When teams/studios show up (they will — this is a *dev* tool):
-
-- **Team plan via Stripe** on the hosted backend: shared instances,
-  SSO, API credits, SLA. Robux doesn't work for B2B invoicing.
-- The npm package stays free forever — it's the top of the funnel.
-
-## Setup checklist (things only your Roblox account can do)
-
-1. **Create "RoForge HQ" experience** in Studio (empty lobby is fine),
-   publish it.
-2. **Create the Game Pass** (499 R$) + **Developer Product** (199 R$,
-   re-purchasable) for it in Creator Dashboard → paste both ids into the
-   RoForge Bridge plugin's dock (**Pro Game Pass ID** / **Pro Dev Product
-   ID** → Save). Same ids go into the HQ storefront
-   (`hq/src/StarterPlayer/StarterPlayerScripts/HQ.client.lua`). The
-   `MarketplaceService` ownership check is already wired
-   (`studio-bridge/src/Root/Bridge/Pro.lua`).
-3. **Publish the plugin** (File → Publish to Roblox as a Plugin).
-4. **Enable DevEx** (Creator Dashboard → Payments) so Robux can become
-   real money at the 50k R$ threshold.
-5. Optional: flip the Toolbox plugin asset to premium-only.
-
-## What we build for this (next turns, no account needed)
-
-- [x] `ProGamePassId`/`ProDevProductId` in bridge Settings + the
-      `MarketplaceService` ownership check + `forge_pro` status tool
-      (reports Free/Pro, which features are active). → `studio-bridge/src/Root/Bridge/Pro.lua`
-- [x] `roforge pro` CLI subcommand (prints license status when connected
-      to a Pro-bridged Studio; attaches to a running `roforge studio` bridge
-      or starts a throwaway one).
-- [x] HQ experience starter place (`hq/` — storefront buttons for the pass +
-      monthly dev product, README with the dashboard steps).
-- [x] GitHub repo polish: `LICENSE` (MIT), `LICENSE-PRO` notice,
-      `CONTRIBUTING.md`, issue templates, README Pro section.
+Team/studio plans (Stripe billing on the hosted backend) are the only
+planned addition outside Robux, and only if teams ask for them. The npm
+package stays free regardless.

@@ -169,7 +169,7 @@ so ownership checks work.
 **Get Pro:** create the products in the **RoForge HQ** experience
 ([hq/](hq/) has the starter place + step-by-step), then buy the pass there —
 your Studio session detects it automatically.
-Licensing boundary: [LICENSE-PRO.md](LICENSE-PRO.md) · plan: [docs/MONETIZATION.md](docs/MONETIZATION.md).
+Licensing boundary: [LICENSE-PRO.md](LICENSE-PRO.md) · monetization: [docs/MONETIZATION.md](docs/MONETIZATION.md).
 
 ## Status
 
