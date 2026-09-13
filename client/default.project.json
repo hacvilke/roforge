@@ -1,6 +1,6 @@
 {
   "name": "RoForge",
   "tree": {
-    "$path": "src"
+    "$path": "src/Root"
   }
 }

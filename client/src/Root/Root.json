@@ -1,7 +1,0 @@
-{
-  "className": "Plugin",
-  "properties": {
-    "Name": "RoForge",
-    "Source": "local ok, err = pcall(function()\n\tlocal api = require(script:WaitForChild('RoForge'))\n\tapi.start(script)\nend)\nif not ok then\n\twarn('[RoForge] failed to start: ' .. tostring(err))\nend"
-  }
-}

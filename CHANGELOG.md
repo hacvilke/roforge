@@ -3,6 +3,27 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.9 — 2026-09-13
+
+### Fixed
+- **Studio file plugins now actually load.** The bundled `RoForgeBridge.rbxm`
+  and `RoForge.rbxm` had no executable script at the model root (everything
+  was `ModuleScript`s), so Studio silently loaded them and did nothing — no
+  toolbar button, no dock, and the plugin was missing from the Plugin
+  Manager. Both plugins now ship a proper entry
+  (`src/Root/init.server.luau`, matching Rojo's own plugin template) that
+  runs at plugin load time, guarded by the `plugin` global so importing the
+  model into a place is a no-op.
+- **Rebuilt with Rojo 7.7.0 conventions.** Rojo 7.x treats a lone `X.json`
+  next to `X.lua` as a separate JSON module, so the old `X.json` sidecars
+  were injecting 16+ junk instances into the model. They're gone; module
+  roots now use the `init.lua` convention (e.g. `Bridge/init.lua`), which
+  Rojo merges into a single `ModuleScript` with its siblings as children —
+  the tree the Lua `require`s already expect.
+- Rebuilt `studio-bridge/dist/RoForgeBridge.rbxm` (10 instances),
+  `client/dist/RoForge.rbxm` (13 instances), and re-verified
+  `hq/dist/RoForgeHQ.rbxm`.
+
 ## 0.3.8 — 2026-09-13
 
 ### Fixed
