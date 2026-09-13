@@ -5,6 +5,7 @@
 local Viewport = require(script.Viewport)
 local LocalTools = require(script.LocalTools)
 local Pro = require(script.Pro)
+local ProModuleLoader = require(script.ProModuleLoader)
 local Selection = game:GetService("Selection")
 
 local ExtraTools = {}
@@ -778,6 +779,55 @@ local function forgePro(_args)
 	return Pro.report()
 end
 
+-- ===== Pro feature seams (closed module via ProModuleLoader) =====
+-- The open plugin never implements Pro features itself; it delegates to the
+-- closed module when it is present. Absent module / non-Pro user → a clean
+-- {ok=false, error=...} the model can relay to the user.
+
+local function forgeProFeatures(_args)
+	local f = ProModuleLoader.features()
+	return {
+		pro = Pro.isPro(), -- open-side entitlement (pass/dev product)
+		componentInstalled = f.installed == true,
+		componentPro = f.isPro == true,
+		features = f.features,
+		report = f.report,
+		note = f.error,
+	}
+end
+
+local function forgeCloudSnapshot(args)
+	if args.path and args.path ~= "" then
+		local inst, err = LocalTools.resolvePath(args.path)
+		if not inst then
+			return { ok = false, error = err }
+		end
+		return ProModuleLoader.snapshot(inst, args.name)
+	end
+	return ProModuleLoader.snapshot(nil, args.name)
+end
+
+local function forgeCloudRestore(args)
+	if not args.name or args.name == "" then
+		return { ok = false, error = "name (the snapshot to restore) is required" }
+	end
+	if args.path and args.path ~= "" then
+		local inst, err = LocalTools.resolvePath(args.path)
+		if not inst then
+			return { ok = false, error = err }
+		end
+		return ProModuleLoader.restore(args.name, inst)
+	end
+	return ProModuleLoader.restore(args.name, nil)
+end
+
+local function forgeTeamShare(args)
+	if not args.label or args.label == "" or not args.ref or args.ref == "" then
+		return { ok = false, error = "label and ref are required (e.g. label='level1-wip', ref='place:12345') }"
+	}
+	return ProModuleLoader.share(args.label, args.ref)
+end
+
 local TOOLS = {
 	{
 		name = "forge_viewport",
@@ -1008,6 +1058,66 @@ local TOOLS = {
 			additionalProperties = false,
 		},
 		run = forgePro,
+	},
+	{
+		name = "forge_pro_features",
+		description =
+			"Status of the Pro feature component (closed module): installed or absent, plus the module's "
+			.. "report (snapshot store, team workspace, MCP relay). Read-only. Call before offering Pro features.",
+		input_schema = {
+			type = "object",
+			properties = {},
+			additionalProperties = false,
+		},
+		run = forgeProFeatures,
+	},
+	{
+		name = "forge_cloud_snapshot",
+		description =
+			"PRO: save a named snapshot of a place subtree (default: workspace) to the Pro store, so it can be "
+			.. "restored later or after a crash. Requires the Pro module installed and the user owning the Pro pass.",
+		input_schema = {
+			type = "object",
+			properties = {
+				path = { type = "string", description = "Dotted subtree root (default: workspace)" },
+				name = { type = "string", description = "Snapshot label (default: auto)" },
+			},
+			additionalProperties = false,
+		},
+		run = forgeCloudSnapshot,
+	},
+	{
+		name = "forge_cloud_restore",
+		description =
+			"PRO: restore a named Pro snapshot into the place (default under workspace). Destructive: it "
+			.. "rebuilds the instance tree. Requires the Pro module installed and the user owning the Pro pass.",
+		input_schema = {
+			type = "object",
+			properties = {
+				name = { type = "string", description = "Snapshot label to restore" },
+				path = { type = "string", description = "Dotted parent to restore into (default: workspace)" },
+			},
+			required = { "name" },
+			additionalProperties = false,
+		},
+		run = forgeCloudRestore,
+	},
+	{
+		name = "forge_team_share",
+		description =
+			"PRO: publish a reference (place id, checkpoint label, or note) to the shared team workspace visible "
+			.. "to teammates in the place. Destructive: writes to the shared store. "
+			.. "Requires the Pro module installed and the user owning the Pro pass.",
+		input_schema = {
+			type = "object",
+			properties = {
+				label = { type = "string", description = "Short name, e.g. 'level1-wip'" },
+				ref = { type = "string", description = "The reference to share, e.g. 'place:12345' or 'cp:level1-v2'" },
+			},
+			required = { "label", "ref" },
+			additionalProperties = false,
+		},
+		run = forgeTeamShare,
 	},
 }
 

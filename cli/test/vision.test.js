@@ -71,7 +71,7 @@ test("openai renderHistory: no image → no extra user message", () => {
   assert.equal(msgs[0].role, "tool");
 });
 
-test("bridge tools: 25 registered, new shapes + approval gates", async () => {
+test("bridge tools: 29 registered, new shapes + approval gates", async () => {
   const fakeBridge = {
     submit: async (name) => {
       if (name === "forge_viewport") {
@@ -82,7 +82,7 @@ test("bridge tools: 25 registered, new shapes + approval gates", async () => {
     },
   };
   const tools = bridgeTools(fakeBridge);
-  assert.equal(tools.length, 25);
+  assert.equal(tools.length, 29);
   const by = (n) => tools.find((t) => t.name === n);
   for (const n of [
     "forge_viewport",

@@ -454,6 +454,58 @@ Priority order:
    rename/move utilities, `forge_import` from a hosted URL (needs backend
    file endpoint).
 
+## DONE — Turn 17 (closed Pro module + open seams + strict plugin system)
+
+### 🚩 Closed Pro repo (private `hacvilke/roforge-pro`)
+- [x] Clone of the open repo + `pro/` — **`ProModule.lua`** implements the 3
+      paid features locally out-of-the-box: cloud snapshots
+      (snapshot/list/restore/delete of a place subtree, JSON-serialized with
+      class/props/attributes/script sources), team workspaces (share/list
+      label→ref), hosted MCP relay (status/send). Storage: in-place
+      `ReplicatedStorage/RoForgeProStore` folder (mirrors to
+      `<backendUrl>/v1/store` when `backendUrl` is set).
+- [x] **Entitlement via SETTINGS block** — user pastes the 999 R$ game pass id
+      in `SETTINGS.gamePassId` at the top of the module (or the plugin passes
+      it via `configure()`). 60s cache, `configure()` resets it.
+      `MarketplaceService` checks handle pass + dev product, all three API
+      return shapes (bool / `{IsPurchased}` / error).
+- [x] 48-check standalone-luau suite (`pro/test/`), rojo build
+      (`pro/dist/ProModule.rbxm`), `pro/README.md` + closed root README.
+- [x] Repo created **private**, pushed, remote URL de-tokenized.
+
+### 🚩 Open repo: MIT seam (no Pro logic leaks into open code)
+- [x] **`ProModuleLoader.lua`** — finds `RoForgeProModule` (plugin child for
+      Pro builds, or ReplicatedStorage), validates the 11-function contract,
+      caches, never errors when absent. 25 new checks in `pro_test.lua`
+      (absent / non-ModuleScript / present / non-Pro refusal / bad module /
+      runtime-error containment) → **60/60**.
+- [x] 4 new bridge tools: `forge_pro_features`, `forge_cloud_snapshot`,
+      `forge_cloud_restore`, `forge_team_share` → **29 `forge_*`** total
+      (CLI registry + schemas + DESTRUCTIVE gates: restore + share).
+- [x] Open `Pro.lua` `_devProductOwned` fixed: three-variant ownership
+      (bool / table / error) — "call succeeded" no longer means owned.
+- [x] Rebuilt `RoForgeBridge.rbxm` (+4 KB), npm bundle re-synced.
+
+### 🚩 Strict declarative plugin system (CLI)
+- [x] `cli/src/plugins.js` — **JSON-only plugins**
+      (`<project>/plugins/*.json`, `~/.roforge/plugins/*.json`,
+      `ROFORGE_PLUGINS_DIR`): strict allowlist validation at every depth;
+      banned code-shape keys rejected by name; 4 actions (http public-https
+      with SSRF host guards / allowlisted command argv / project-relative
+      read-file / placeholder transform); `{{arg}}` is the only template
+      syntax and only for declared args; no env/key injection; approval gate
+      on POST/PUT + command; per-tool output cap (default 8k, hard 64k);
+      conflicts and rejections reported per-file.
+- [x] Examples `cli/examples/plugins/{game-stats,place-helper}.json`,
+      `docs/PLUGINS.md`, 20 tests → **CLI 114/114**.
+- [x] `buildTools` third tier + TUI status lines + system-prompt plugin
+      status; `cfg.plugins.enabled = false` disables.
+
+### Gates (all green, both repos)
+- Open: CLI 114/114, Pro 60/60, server 21/21, PNG valid, DEFLATE valid,
+  analyze gate clean, e2e demo OK, rojo builds ×3.
+- Closed: 48/48. Version **0.3.6** (npm), pushed, published.
+
 ## Invariants (do not break on any turn)
 
 - The model API key is sent ONLY to the model provider. Never to any server,

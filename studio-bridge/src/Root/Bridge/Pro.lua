@@ -137,12 +137,20 @@ function Pro._devProductOwned()
 	if not ms or not userId then
 		return false
 	end
-	-- Passes is a property on MarketplaceService; PurchasedProductAsync
-	-- errors for users who never bought the product.
-	local ok = pcall(function()
+	-- Passes is a property on MarketplaceService (no chained colon calls in
+	-- Luau). PurchasedProductAsync may return a boolean, a table with
+	-- IsPurchased, or error for users who never bought the product — handle
+	-- all three.
+	local ok, result = pcall(function()
 		return ms.Passes:PurchasedProductAsync(userId, state.devProductId)
 	end)
-	return ok
+	if not ok then
+		return false
+	end
+	if type(result) == "table" then
+		return result.IsPurchased == true
+	end
+	return result == true
 end
 
 local function summary()

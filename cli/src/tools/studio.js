@@ -29,6 +29,10 @@ const BRIDGE_TOOL_NAMES = [
   "forge_export",
   "forge_import",
   "forge_pro",
+  "forge_pro_features",
+  "forge_cloud_snapshot",
+  "forge_cloud_restore",
+  "forge_team_share",
 ];
 
 const BRIDGE_DESCRIPTIONS = {
@@ -57,6 +61,10 @@ const BRIDGE_DESCRIPTIONS = {
   forge_export: "Export a DataModel subtree as JSON (properties, script sources truncated, attributes). Defaults to workspace, depth 3 (max 6; 10 with RoForge Pro).",
   forge_import: "Apply a forge_export JSON back into Studio: recreates the instance tree (properties, sources, attributes) under a parent. dry_run=true only reports. Destructive; max 500 nodes (2500 with RoForge Pro).",
   forge_pro: "Report the current RoForge Pro entitlement: Free or Pro, which pass/product the Studio user owns, and the active limits + Pro features. Call it to know whether the user has Pro.",
+  forge_pro_features: "Status of the Pro feature component (closed module): installed or absent, plus its report (snapshot store, team workspace, MCP relay). Read-only; call before offering Pro features.",
+  forge_cloud_snapshot: "PRO: save a named snapshot of a place subtree (default: workspace) to the Pro store for later restore. Needs the Pro module installed and the Pro pass.",
+  forge_cloud_restore: "PRO: restore a named Pro snapshot into the place (default under workspace). Destructive: rebuilds the instance tree. Needs the Pro module installed and the Pro pass.",
+  forge_team_share: "PRO: publish a reference (place id, checkpoint label, or note) to the shared team workspace visible to teammates in the place. Destructive: writes the shared store. Needs the Pro module installed and the Pro pass.",
 };
 
 const BRIDGE_SCHEMAS = {
@@ -216,6 +224,33 @@ const BRIDGE_SCHEMAS = {
     additionalProperties: false,
   },
   forge_pro: { type: "object", properties: {}, additionalProperties: false },
+  forge_pro_features: { type: "object", properties: {}, additionalProperties: false },
+  forge_cloud_snapshot: {
+    type: "object",
+    properties: {
+      path: { type: "string", description: "Dotted subtree root (default: workspace)" },
+      name: { type: "string", description: "Snapshot label (default: auto)" },
+    },
+    additionalProperties: false,
+  },
+  forge_cloud_restore: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "Snapshot label to restore" },
+      path: { type: "string", description: "Dotted parent to restore into (default: workspace)" },
+    },
+    required: ["name"],
+    additionalProperties: false,
+  },
+  forge_team_share: {
+    type: "object",
+    properties: {
+      label: { type: "string", description: "Short name, e.g. 'level1-wip'" },
+      ref: { type: "string", description: "The reference to share, e.g. 'place:12345'" },
+    },
+    required: ["label", "ref"],
+    additionalProperties: false,
+  },
 };
 
 // Tools that modify the DataModel — gated by the approval prompt.
@@ -229,6 +264,8 @@ const DESTRUCTIVE = new Set([
   "forge_undo",
   "forge_bulk_create",
   "forge_import",
+  "forge_cloud_restore",
+  "forge_team_share",
 ]);
 
 export function bridgeTools(bridgeServer) {

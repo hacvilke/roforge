@@ -148,7 +148,7 @@ test("agent: MCP-tier image reaches the Anthropic request body (full loop)", { t
 test("bridge: checkpoint/undo/checkpoints registered with correct gates", () => {
   const fakeBridge = { submit: async () => ({ ok: true, result: "ok" }) };
   const tools = bridgeTools(fakeBridge);
-  assert.equal(tools.length, 25);
+  assert.equal(tools.length, 29);
   const by = (n) => tools.find((t) => t.name === n);
   assert.ok(by("forge_checkpoint"));
   assert.ok(by("forge_undo"));

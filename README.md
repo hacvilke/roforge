@@ -183,15 +183,20 @@ Rojo-built `.rbxm` artifacts, offline e2e demo, GitHub Actions CI.
 Latest: viewport vision on **both** tiers (bridge `forge_viewport` and
 Studio's MCP screenshots — the model actually sees Studio), `ChangeHistoryService`
 undo checkpoints, find/bulk-create/snapshot/diff/export/import Studio tools
-(25 `forge_*` total — `forge_import` re-applies an export JSON, `forge_pro`
-reports the license), **multi-block DEFLATE** (streams > 64 KB now inflate
-byte-exact, with per-block dynamic/stored choice), property-level
-`forge_diff`, streaming Markdown + expandable tool output (`/out`) in the
-TUI, real deflate, multi-provider + free tiers, the **published**
-`roforge-cli` npm package (zero deps — `npm i -g roforge-cli`), and the
-**Pro pass-gate** (free/Pro limits enforced in the plugin, 35-check Luau
-test suite). Next: closed-source Pro features, Deflate speed tuning, team
-features. See `PROGRESS.md` and `docs/MONETIZATION.md`.
+(29 `forge_*` total — `forge_import` re-applies an export JSON, `forge_pro`
+reports the license, and the four Pro feature seams `forge_pro_features` /
+`forge_cloud_snapshot` / `forge_cloud_restore` / `forge_team_share` delegate
+to the closed Pro module when it is installed — the open plugin itself only
+contains the MIT **ProModuleLoader** seam), **multi-block DEFLATE** (streams
+> 64 KB now inflate byte-exact, with per-block dynamic/stored choice),
+property-level `forge_diff`, streaming Markdown + expandable tool output
+(`/out`) in the TUI, real deflate, multi-provider + free tiers, the
+**published** `roforge-cli` npm package (zero deps — `npm i -g roforge-cli`),
+the **Pro pass-gate** (free/Pro limits enforced in the plugin, 60-check Luau
+test suite), and a **strict declarative plugin system** (JSON tool specs only —
+no code field, so a plugin can't contain malicious intent by construction).
+Next: hosted Pro backend deployment, Deflate speed tuning. See `PROGRESS.md`
+and `docs/MONETIZATION.md`.
 
 ## License
 

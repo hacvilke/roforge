@@ -1,0 +1,27 @@
+{
+  "name": "game-stats",
+  "version": "1.0.0",
+  "description": "Sample plugin: look up Roblox game stats from a public https API. Declarative only — no code.",
+  "tools": [
+    {
+      "name": "game_info",
+      "description": "Fetch basic public info for a Roblox game id (https, read-only).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "game_id": { "type": "integer", "description": "Roblox game/universe id", "minimum": 1 }
+        },
+        "required": ["game_id"],
+        "additionalProperties": false
+      },
+      "action": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://games.roblox.com/v1/games",
+        "query": { "universeIds": "{{game_id}}" },
+        "timeout_ms": 10000,
+        "output_max_chars": 4000
+      }
+    }
+  ]
+}

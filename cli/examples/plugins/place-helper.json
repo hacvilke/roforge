@@ -1,0 +1,54 @@
+{
+  "name": "place-helper",
+  "version": "1.0.0",
+  "description": "Sample plugin: read a project data file, render a template, and call the roforge CLI. No code — declarative actions only.",
+  "tools": [
+    {
+      "name": "read_project_note",
+      "description": "Read the project's NOTE.md (fixed relative path, size-capped — no path injection).",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "action": {
+        "type": "read-file",
+        "path": "NOTE.md",
+        "max_bytes": 262144
+      }
+    },
+    {
+      "name": "changelog_line",
+      "description": "Render a changelog line from args (template fill — no code).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "scope": { "type": "string", "description": "e.g. bridge, cli" },
+          "summary": { "type": "string", "description": "Short past-tense summary" }
+        },
+        "required": ["scope", "summary"],
+        "additionalProperties": false
+      },
+      "action": {
+        "type": "transform",
+        "template": "- {{scope}}: {{summary}}",
+        "output_max_chars": 2000
+      }
+    },
+    {
+      "name": "roforge_version",
+      "description": "Print the installed roforge CLI version (allowlisted binary, argv array, no shell).",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "action": {
+        "type": "command",
+        "command": "roforge",
+        "args": ["--version"],
+        "output_max_chars": 500
+      }
+    }
+  ]
+}

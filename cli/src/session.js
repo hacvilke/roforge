@@ -49,7 +49,14 @@ export class Session {
       luauAnalyzePath: this.luauAnalyzePath,
     });
     this.tools = info.tools;
-    this.studioInfo = { mcp: info.mcp, bridge: info.bridge, mcpToolCount: info.mcpToolCount, mcpCapture: info.mcpCapture || [] };
+    this.studioInfo = {
+      mcp: info.mcp,
+      bridge: info.bridge,
+      mcpToolCount: info.mcpToolCount,
+      mcpCapture: info.mcpCapture || [],
+      plugins: info.plugins || [],
+      pluginErrors: info.pluginErrors || [],
+    };
     this.cfg._activeModel = this.model;
     return this.studioInfo;
   }
@@ -90,7 +97,19 @@ Rules:
 Current state:
 - Model: ${this.model} (${this.providerName}${PROVIDERS[this.providerName] && PROVIDERS[this.providerName].hasFreeTier && this.cfg.freeFirst !== false ? ", free tier" : ""})
 - ${studio.join(" ")}
-- Tools: ${this.tools.map((t) => t.name).join(", ")}`;
+- Tools: ${this.tools.map((t) => t.name).join(", ")}${
+    this.studioInfo.plugins && this.studioInfo.plugins.length
+      ? `\n\nPlugins (strict declarative JSON — no code, outputs capped, mutations approval-gated): ${this.studioInfo.plugins
+          .map((p) => `${p.name}@${p.version} (${p.toolCount} tools)`)
+          .join(", ")}.`
+      : ""
+  }${
+    this.studioInfo.pluginErrors && this.studioInfo.pluginErrors.length
+      ? `\n\nRejected plugins (tell the user if they ask; fix the JSON and restart): ${this.studioInfo.pluginErrors
+          .map((e) => `${e.file}: ${e.error}`)
+          .join("; ")}.`
+      : ""
+  }`;
   }
 
   async send(userText) {

@@ -7,6 +7,8 @@ import { robloxTools } from "./roblox.js";
 import { projectTools } from "./project.js";
 import { bridgeTools, mcpToolsFromList, mcpCaptureNames } from "./studio.js";
 import { McpClient } from "../mcp.js";
+import { loadPlugins } from "../plugins.js";
+import { configDir } from "../config.js";
 
 export async function buildTools({ cfg, cwd, bridgeServer, luauAnalyzePath }) {
   const tools = [];
@@ -24,6 +26,13 @@ export async function buildTools({ cfg, cwd, bridgeServer, luauAnalyzePath }) {
   add(projectTools({ cwd, luauAnalyzePath }));
   if (bridgeServer) add(bridgeTools(bridgeServer));
 
+  // Strict declarative plugins (JSON only — no code fields, ever).
+  const pluginInfo =
+    cfg && cfg.plugins && cfg.plugins.enabled === false
+      ? { tools: [], plugins: [], pluginErrors: [] }
+      : loadPlugins({ cwd, configDirBase: configDir() });
+  add(pluginInfo.tools);
+
   // MCP tier (official, built into Studio)
   if (cfg.studioMode === "mcp" || cfg.studioMode === "auto") {
     try {
@@ -34,14 +43,30 @@ export async function buildTools({ cfg, cwd, bridgeServer, luauAnalyzePath }) {
         add(mcpToolsFromList(client, raw));
         cfg._mcpClient = client;
         cfg._mcpConnected = true;
-        return { tools, mcp: true, bridge: Boolean(bridgeServer), mcpToolCount: raw.length, mcpCapture: mcpCaptureNames(raw) };
+        return {
+          tools,
+          mcp: true,
+          bridge: Boolean(bridgeServer),
+          mcpToolCount: raw.length,
+          mcpCapture: mcpCaptureNames(raw),
+          plugins: pluginInfo.plugins,
+          pluginErrors: pluginInfo.errors,
+        };
       }
     } catch {
       /* fall through to bridge-only */
     }
   }
 
-  return { tools, mcp: false, bridge: Boolean(bridgeServer), mcpToolCount: 0, mcpCapture: [] };
+  return {
+    tools,
+    mcp: false,
+    bridge: Boolean(bridgeServer),
+    mcpToolCount: 0,
+    mcpCapture: [],
+    plugins: pluginInfo.plugins,
+    pluginErrors: pluginInfo.errors,
+  };
 }
 
 export function listToolNames(tools) {

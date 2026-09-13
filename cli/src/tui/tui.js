@@ -312,6 +312,12 @@ export class TUI {
         );
       }
     }
+    if (s.plugins && s.plugins.length) {
+      lines.push(`${green("●")} plugins: ${s.plugins.map((p) => `${p.name}@${p.version}`).join(", ")} (declarative JSON, no code)`);
+    }
+    if (s.pluginErrors && s.pluginErrors.length) {
+      lines.push(`${red("✕")} rejected plugins: ${s.pluginErrors.map((e) => `${e.file}: ${e.error}`).join("; ")}`);
+    }
     return lines.join("\n");
   }
 

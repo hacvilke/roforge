@@ -3,6 +3,55 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.6 — 2026-09-13
+
+### Added — Pro feature seams (open repo stays MIT; features live in the closed module)
+- **Four new bridge tools (29 `forge_*` total):** `forge_pro_features`
+  (read-only status of the closed component), `forge_cloud_snapshot`,
+  `forge_cloud_restore` (approval-gated), `forge_team_share` (approval-gated).
+  Free users / absent module get a clean "Pro component not installed" or
+  "requires the RoForge Pro pass" message — nothing errors.
+- **New MIT `ProModuleLoader`** (`studio-bridge/src/Root/Bridge/`): finds the
+  closed `RoForgeProModule` ModuleScript (bundled in the plugin for Pro builds,
+  or in `ReplicatedStorage` for in-place installs), validates its 11-function
+  contract, caches the result. Contains zero Pro logic — the open repo never
+  ships feature implementations.
+- **The closed Pro module now exists** in the private companion repo
+  `hacvilke/roforge-pro`: cloud snapshots (serialize → list → restore →
+  delete), team workspaces (share/list place & checkpoint refs), hosted MCP
+  relay (status/send). Local-first (in-place `RoForgeProStore` in
+  ReplicatedStorage), optional `backendUrl` mirror. **The pass id goes in the
+  module's SETTINGS block** (or via `configure()` from the plugin).
+
+### Added — strict declarative plugin system (CLI)
+- **JSON-only plugins** in `<project>/plugins/*.json` and
+  `~/.roforge/plugins/*.json` (plus `ROFORGE_PLUGINS_DIR`). No code fields —
+  the validator is a strict allowlist at every depth, so a plugin cannot
+  contain malicious intent by construction.
+- Four actions: `http` (public https only — localhost/private hosts rejected
+  at load time), `command` (allowlist: `roforge`; argv array, no shell),
+  `read-file` (project-root-relative, size-capped), `transform` (placeholder
+  fill). No env/key injection — the only substitution is `{{arg}}` for
+  declared input args.
+- Guarantees: mutating actions (POST/PUT, command) always approval-gated;
+  outputs capped (default 8,000 chars, hard 64 KB); rejections listed in the
+  TUI status line and the agent's system prompt.
+- Two working examples in `cli/examples/plugins/` and `docs/PLUGINS.md`.
+  Wired into `buildTools` as a third tier; `cfg.plugins.enabled = false`
+  disables it.
+
+### Fixed
+- Open `Pro.lua` `_devProductOwned` now handles all three real API shapes
+  (boolean, `{ IsPurchased = … }`, error) — previously "the call succeeded"
+  counted as owned. The stub in `pro_test.lua` covers the table + boolean
+  shapes; the closed suite covers all three.
+
+### Tests
+- CLI 114/114 (20 new plugin-system tests), Pro suite 60/60 (25 new
+  loader checks: absent/present/non-Pro/bad-module/runtime-error),
+  server 21/21, PNG + DEFLATE valid, analyze gate clean, e2e demo OK.
+- Closed suite (private repo): 48/48.
+
 ## 0.3.5 — 2026-09-13
 
 ### Changed — Pro is now a single one-time pass
