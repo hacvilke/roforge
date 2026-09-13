@@ -3,6 +3,16 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.11 — 2026-09-13
+
+### Changed
+- **Plugins now ship in the classic XML format** (same `.rbxm`
+filename, classic XML inside). Modern Studio reads both formats, but
+older Studio builds can only read the classic one — this makes the
+plugins work on any Studio version. If Studio showed a one-time prompt
+about the plugin and it was declined, the new file content re-triggers
+the prompt.
+
 ## 0.3.10 — 2026-09-13
 
 ### Fixed
