@@ -7,6 +7,7 @@
 //   POST /v1/bridge/jobs/:id/result       → {ok}
 // Auth: Authorization: Bearer <bridge token> (loopback-only by design).
 import http from "node:http";
+import { timingSafeEqual } from "node:crypto";
 import { json } from "./wire.js";
 
 export class BridgeServer {
@@ -59,7 +60,13 @@ export class BridgeServer {
   _authorized(req) {
     const h = String(req.headers["authorization"] || "");
     const m = /^Bearer\s+(.+)$/i.exec(h);
-    return Boolean(m && m[1].trim() === this.token);
+    if (!m) return false;
+    // Constant-time compare (defence in depth; the server is loopback-only).
+    const given = m[1].trim();
+    const a = Buffer.from(given);
+    const b = Buffer.from(this.token);
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
   }
 
   _handle(req, res) {

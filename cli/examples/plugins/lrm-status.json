@@ -1,0 +1,52 @@
+{
+  "name": "lrm-status",
+  "version": "1.0.0",
+  "description": "Read-only LRM (hacvilke/lrm) P2P VCS queries for the agent: repo status, log, peers. Requires 'lrm' added to plugins.allowedCommands and the lrm binary on PATH.",
+  "tools": [
+    {
+      "name": "lrm_repo_status",
+      "description": "Show the LRM repo state in the current project (branch, commits, dirty files).",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "action": {
+        "type": "command",
+        "command": "lrm",
+        "args": ["status"],
+        "output_max_chars": 4000
+      }
+    },
+    {
+      "name": "lrm_repo_log",
+      "description": "Show recent LRM commit history for the current project.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "action": {
+        "type": "command",
+        "command": "lrm",
+        "args": ["log", "--limit", "20"],
+        "output_max_chars": 6000
+      }
+    },
+    {
+      "name": "lrm_repo_peers",
+      "description": "List P2P peers discovered for the LRM repo (LAN mDNS / WAN keys).",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "action": {
+        "type": "command",
+        "command": "lrm",
+        "args": ["peers"],
+        "output_max_chars": 4000
+      }
+    }
+  ]
+}

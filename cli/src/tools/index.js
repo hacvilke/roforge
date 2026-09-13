@@ -7,7 +7,7 @@ import { robloxTools } from "./roblox.js";
 import { projectTools } from "./project.js";
 import { bridgeTools, mcpToolsFromList, mcpCaptureNames } from "./studio.js";
 import { McpClient } from "../mcp.js";
-import { loadPlugins } from "../plugins.js";
+import { loadPlugins, DEFAULT_ALLOWED_COMMANDS } from "../plugins.js";
 import { configDir } from "../config.js";
 
 export async function buildTools({ cfg, cwd, bridgeServer, luauAnalyzePath }) {
@@ -27,10 +27,15 @@ export async function buildTools({ cfg, cwd, bridgeServer, luauAnalyzePath }) {
   if (bridgeServer) add(bridgeTools(bridgeServer));
 
   // Strict declarative plugins (JSON only — no code fields, ever).
+  const pcfg = (cfg && cfg.plugins) || {};
+  const allowedCommands =
+    Array.isArray(pcfg.allowedCommands) && pcfg.allowedCommands.length
+      ? pcfg.allowedCommands.filter((c) => typeof c === "string" && /^[a-z0-9._-]{1,32}$/i.test(c))
+      : DEFAULT_ALLOWED_COMMANDS;
   const pluginInfo =
-    cfg && cfg.plugins && cfg.plugins.enabled === false
+    pcfg.enabled === false
       ? { tools: [], plugins: [], pluginErrors: [] }
-      : loadPlugins({ cwd, configDirBase: configDir() });
+      : loadPlugins({ cwd, configDirBase: configDir(), allowedCommands });
   add(pluginInfo.tools);
 
   // MCP tier (official, built into Studio)

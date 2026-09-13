@@ -41,7 +41,26 @@ const ACTION_TYPES = new Set(["http", "command", "read-file", "transform"]);
 const HTTP_METHODS = new Set(["GET", "POST", "PUT"]);
 const FORBIDDEN_ARG_CHARS = /[;|&`$<>\n\r]/;
 const PRIVATE_HOST_RE =
-  /^(localhost|127\.[0-9.]+|0\.0\.0\.0|::1|10\.[0-9.]+|192\.168\.[0-9.]+|172\.(1[6-9]|2[0-9]|3[01])\.[0-9.]+|169\.254\.[0-9.]+|metadata\.google\.internal|.*\.local|.*\.internal)$/i;
+  /^(localhost|127\.[0-9.]+|0\.0\.0\.0|10\.[0-9.]+|192\.168\.[0-9.]+|172\.(1[6-9]|2[0-9]|3[01])\.[0-9.]+|169\.254\.[0-9.]+|metadata\.google\.internal|.*\.local|.*\.internal)$/i;
+
+// Fail-closed host check. new URL() normalizes IPv4 numerics (2130706433 →
+// 127.0.0.1) but keeps IPv6 bracketed, so bracketed/unknown IPv6 is rejected
+// outright — public dev endpoints use domain names, not raw IPv6.
+function isPublicHost(hostIn) {
+  let host = String(hostIn || "").toLowerCase();
+  if (host.startsWith("[") && host.endsWith("]")) host = host.slice(1, -1);
+  if (host.includes(":")) {
+    if (host === "" || host === "::" || host === "::1") return false;
+    if (/^fe[89ab]/.test(host)) return false; // link-local fe80::/10
+    if (/^f[cd]/.test(host)) return false; // ULA fc00::/7
+    const mapped = /^::ffff:(.+)$/.exec(host); // IPv4-mapped ::ffff:a.b.c.d
+    if (mapped) return isPublicHost(mapped[1]);
+    return false; // any other IPv6: fail closed
+  }
+  if (!host || host.length > 253) return false;
+  if (PRIVATE_HOST_RE.test(host)) return false;
+  return true;
+}
 
 function isObj(v) {
   return v !== null && typeof v === "object" && !Array.isArray(v);
@@ -162,8 +181,7 @@ function checkHttpAction(a, propNames) {
     return err(`http action.url is not a valid URL: ${a.url}`);
   }
   if (u.protocol !== "https:") return err("http action.url must be https (public web only)");
-  const host = u.hostname.toLowerCase();
-  if (PRIVATE_HOST_RE.test(host)) return err(`http action.url host "${host}" is not public (localhost/private ranges are forbidden)`);
+  if (!isPublicHost(u.hostname)) return err(`http action.url host "${u.hostname}" is not public (localhost/private ranges are forbidden)`);
   if (u.port !== "" && u.port !== "443") return err("http action.url may only use the default https port");
 
   let query = {};
@@ -180,7 +198,9 @@ function checkHttpAction(a, propNames) {
   const headers = a.headers !== undefined ? (isObj(a.headers) ? a.headers : err("http action.headers must be an object")) : {};
   if (isObj(a.headers)) {
     for (const [k, v] of Object.entries(a.headers)) {
+      if (typeof k !== "string" || /[\r\n]/.test(k)) return err(`http header key is invalid: ${JSON.stringify(k)}`);
       if (typeof v !== "string" || v.length > 500) return err(`http header "${k}" must be a short string`);
+      if (/[\r\n\u0000]/.test(v)) return err(`http header "${k}" value contains forbidden control characters`);
     }
   }
   let body;
@@ -229,10 +249,12 @@ function checkReadFileAction(a) {
   for (const k of Object.keys(a)) if (!allowed.has(k)) return err(`read-file action: unknown key "${k}"`);
   if (typeof a.path !== "string" || a.path.length === 0 || a.path.length > 500) return err("read-file action.path must be a string");
   if (path.isAbsolute(a.path) || a.path.startsWith("~")) return err("read-file action.path must be relative to the project root");
-  const norm = path.normalize(a.path);
-  if (norm === ".." || norm.startsWith(`..${path.sep}`) || norm.split(path.sep).includes("..")) {
+  // Both separator styles: manifests are validated cross-platform, and a
+  // backslash path is traversal on Windows.
+  if (a.path.split(/[\\/]+/).includes("..")) {
     return err("read-file action.path may not traverse above the project root");
   }
+  const norm = path.normalize(a.path);
   const mb = a.max_bytes !== undefined
     ? typeof a.max_bytes === "number" && Number.isInteger(a.max_bytes) && a.max_bytes >= 1 && a.max_bytes <= MAX_READ_BYTES
       ? a.max_bytes
@@ -323,8 +345,9 @@ export function validateManifest(obj, allowedCommands = ALLOWED_COMMANDS) {
   return { ok: true, manifest: { name: name.value, version: obj.version, description: desc.value, tools } };
 }
 
-// Default allowlist; overridable per load call (tests / future config).
-const ALLOWED_COMMANDS = ["roforge"];
+// Default allowlist; overridable per load call (config / tests).
+export const DEFAULT_ALLOWED_COMMANDS = ["roforge"];
+const ALLOWED_COMMANDS = DEFAULT_ALLOWED_COMMANDS;
 
 // ---- execution ----
 
@@ -340,15 +363,63 @@ export function pluginToolExecutor(plugin, tool) {
     args = isObj(args) ? args : {};
     try {
       if (a.kind === "http") {
-        const url = new URL(a.url);
-        for (const [k, tmpl] of Object.entries(a.query)) url.searchParams.set(k, fillTemplate(tmpl, args));
-        const res = await fetch(url.toString(), {
-          method: a.method,
-          headers: a.headers,
-          body: a.body !== undefined ? fillTemplate(a.body, args) : undefined,
-          signal: AbortSignal.timeout(a.timeoutMs),
-        });
-        const text = await res.text();
+        // Manual redirects: every hop must re-pass the public-host guard
+        // (a 302 to a private address is an SSRF and gets refused).
+        const start = new URL(a.url);
+        for (const [k, tmpl] of Object.entries(a.query)) start.searchParams.set(k, fillTemplate(tmpl, args));
+        let res = null;
+        let cur = start;
+        for (let hop = 0; hop <= 3; hop++) {
+          res = await fetch(cur.toString(), {
+            method: hop === 0 ? a.method : "GET",
+            headers: a.headers,
+            body: hop === 0 && a.body !== undefined ? fillTemplate(a.body, args) : undefined,
+            redirect: "manual",
+            signal: AbortSignal.timeout(a.timeoutMs),
+          });
+          if ([301, 302, 303, 307, 308].includes(res.status)) {
+            const loc = res.headers.get("location");
+            if (!loc) return "ERROR: redirect without Location";
+            let next;
+            try {
+              next = new URL(loc, cur);
+            } catch {
+              return "ERROR: invalid redirect Location";
+            }
+            if (next.protocol !== "https:" || !isPublicHost(next.hostname) || (next.port !== "" && next.port !== "443")) {
+              return "ERROR: redirect to a non-public https target is refused (SSRF guard)";
+            }
+            cur = next;
+            continue;
+          }
+          break;
+        }
+        if (!res) return "ERROR: too many redirects";
+        // Cap the response body (a hostile public host cannot stream gigabytes
+        // into memory): read up to 1 MiB, stop, discard the rest.
+        const MAX_BODY = 1024 * 1024;
+        const reader = res.body ? res.body.getReader() : null;
+        let text;
+        if (reader) {
+          const parts = [];
+          let total = 0;
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const room = MAX_BODY - total;
+            if (value.length > room) {
+              parts.push(value.subarray(0, room));
+              total += room;
+              try { await reader.cancel(); } catch { /* ignore */ }
+              break;
+            }
+            parts.push(value);
+            total += value.length;
+          }
+          text = Buffer.concat(parts).toString("utf8");
+        } else {
+          text = await res.text();
+        }
         if (!res.ok) return `ERROR: HTTP ${res.status} ${res.statusText} from ${a.url}`;
         return capText(text, a.outputMax, "plugin output");
       }
@@ -362,10 +433,17 @@ export function pluginToolExecutor(plugin, tool) {
         return capText(out, a.outputMax, "plugin output");
       }
       if (a.kind === "read-file") {
-        const root = process.cwd();
-        const full = path.resolve(root, a.path);
+        const root = fs.realpathSync(process.cwd());
+        let full;
+        try {
+          full = fs.realpathSync(path.resolve(root, a.path));
+        } catch {
+          return `ERROR: file not found: ${a.path}`;
+        }
+        // realpath follows symlinks — a link pointing outside the project is
+        // rejected here, not at parse time.
         if (full !== root && !full.startsWith(root + path.sep)) return "ERROR: path escapes the project root";
-        if (!fs.existsSync(full) || !fs.statSync(full).isFile()) return `ERROR: file not found: ${a.path}`;
+        if (!fs.statSync(full).isFile()) return `ERROR: not a file: ${a.path}`;
         const st = fs.statSync(full);
         if (st.size > a.maxBytes) return `ERROR: file too large (${st.size} > ${a.maxBytes} bytes)`;
         return capText(fs.readFileSync(full, "utf8"), a.outputMax, "file output");

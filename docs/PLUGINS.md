@@ -97,6 +97,38 @@ To try one: copy it into your project's `plugins/` folder and start the TUI —
 the status line shows `plugins: <name>@<version>` and the new tools appear in
 the tool list.
 
+## Extending the command allowlist
+
+The default `command` allowlist is `roforge` only. To let plugins run other
+binaries, set `plugins.allowedCommands` in `~/.roforge/config.json`:
+
+```json
+{ "plugins": { "allowedCommands": ["roforge", "lrm"] } }
+```
+
+Entries must match `^[a-z0-9._-]{1,32}$` (anything else is dropped). Adding a
+binary does **not** weaken the guarantees: argv-array execution (no shell),
+literal/declared-arg values only, metacharacter rejection, 30 s timeout,
+output cap, and the approval prompt on every command tool all still apply.
+
+### Example: LRM (P2P version control) as an AI addon
+
+[`lrm`](https://github.com/hacvilke/lrm) (Log Replication Manager) is a
+zero-dependency Go binary — peer-to-peer, end-to-end-encrypted,
+content-addressed version control with no central server. It fits the
+"local-first, no backend" philosophy, so it's the natural add-on for
+project history:
+
+```json
+{ "plugins": { "allowedCommands": ["roforge", "lrm"] } }
+```
+
+then copy `cli/examples/plugins/lrm-status.json` into your project's
+`plugins/` folder. The agent then gets three read-only tools:
+`lrm_repo_status`, `lrm_repo_log`, `lrm_repo_peers`. Writing commands
+(`lrm commit`, `lrm sync`, …) can be added as further tools — each one
+approval-gated like any command action.
+
 ## What a plugin cannot do
 
 - run arbitrary binaries (only the allowlist)

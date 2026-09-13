@@ -1,6 +1,6 @@
 {
   "name": "roforge-cli",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "RoForge \u2014 Claude-Code-style local AI agent for Roblox Studio. BYOK, zero backend, zero dependencies.",
   "type": "module",
   "bin": {

@@ -133,14 +133,25 @@ export function loadFileConfig() {
 export function saveFileConfig(patch) {
   const current = loadFileConfig();
   const next = deepMerge(current, patch);
-  fs.mkdirSync(configDir(), { recursive: true });
-  fs.writeFileSync(configFile(), JSON.stringify(next, null, 2));
+  fs.mkdirSync(configDir(), { recursive: true, mode: 0o700 });
+  fs.writeFileSync(configFile(), JSON.stringify(next, null, 2), { mode: 0o600 });
+  try {
+    fs.chmodSync(configFile(), 0o600); // writeFileSync mode is ignored on existing files
+  } catch {
+    /* best effort */
+  }
   return next;
 }
 
+const POLLUTION_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 function deepMerge(a, b) {
-  const out = { ...a };
+  const out = Object.create(null);
+  for (const [k, v] of Object.entries(a)) {
+    if (POLLUTION_KEYS.has(k)) continue;
+    out[k] = v;
+  }
   for (const [k, v] of Object.entries(b)) {
+    if (POLLUTION_KEYS.has(k)) continue;
     out[k] = v && typeof v === "object" && !Array.isArray(v) && a[k] && typeof a[k] === "object" ? deepMerge(a[k], v) : v;
   }
   return out;

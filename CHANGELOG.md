@@ -3,6 +3,54 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.7 — 2026-09-13
+
+### Security hardening (massive battery — 51 new checks, all green)
+- **`cli/test/security.test.js`** (29 tests) + 2 allowlist tests: the
+  security/production gate for the network surface, plugin surface, config
+  store, and offline behavior.
+- **Plugin SSRF guards (real gaps found & fixed):**
+  - redirect-following was an SSRF hole — a 302 to a private address is now
+    refused; redirects are manual, ≤3 hops, and **every hop re-validates**
+    against the public-host guard;
+  - host check is now fail-closed: IPv4 numerics (decimal/octal/shorthand,
+    normalized by the URL parser) and all non-public IPv6 forms
+    (`[::1]`, link-local, ULA, IPv4-mapped) are rejected;
+  - response bodies are **capped at 1 MiB** while streaming (a hostile
+    public host can't stream gigabytes into memory);
+  - header values with CRLF/control characters rejected at load time;
+  - `read-file` now resolves symlinks (`fs.realpathSync`) and re-checks
+    project-root containment — a link pointing outside is refused;
+  - backslash paths (`..\win\path`) count as traversal on every platform.
+- **Bridge server:** constant-time token comparison
+  (`crypto.timingSafeEqual`); loopback bind, 16 MB result cap, job-id
+  traversal patterns, oversized bodies, and malformed JSON all covered by
+  live-HTTP tests.
+- **Config store:** API-key file now written `0600` in a `0700` dir (was
+  umask-dependent); `deepMerge` refuses `__proto__`/`constructor`/`prototype`
+  keys; corrupt config degrades to `{}`.
+- **Supply chain:** both npm packages have **zero runtime dependencies**
+  (verified) — nothing to audit, nothing to be compromised through.
+- **Closed Pro module** (private repo): hardened against a poisoned
+  `RoForgeProStore` — `restore` type-checks the record and pcall-guards the
+  rebuild (a hand-edited/malicious entry returns a clean "corrupt snapshot",
+  never a throw); `listSnapshots`/`listShared` type-guard records. 9 new
+  adversarial checks → **57/57**.
+
+### Added — LRM as an AI addon
+- `plugins.allowedCommands` config (default `["roforge"]`, sanitized) wired
+  through `buildTools` — extend it to run other binaries from plugins while
+  keeping every guarantee (no shell, approval gate, caps).
+- `cli/examples/plugins/lrm-status.json` — read-only
+  [`lrm`](https://github.com/hacvilke/lrm) tools (`lrm_repo_status`,
+  `lrm_repo_log`, `lrm_repo_peers`) so the agent can see P2P VCS state;
+  docs section in `docs/PLUGINS.md`.
+
+### Tests
+- CLI **145/145** (51 new security/allowlist checks), server 21/21, Pro
+  60/60, PNG + DEFLATE valid, analyze clean (both repos), e2e OK, closed
+  suite 57/57.
+
 ## 0.3.6 — 2026-09-13
 
 ### Added — Pro feature seams (open repo stays MIT; features live in the closed module)

@@ -444,3 +444,37 @@ test("buildTools: plugin tools merged, reserved names win, info surfaced", async
   const info2 = await buildTools({ cfg: { plugins: { enabled: false } }, cwd, bridgeServer: null, luauAnalyzePath: null });
   assert.ok(!info2.tools.some((t) => t.name === "integ_probe"));
 });
+
+// ---------- allowlist config + lrm addon example ----------
+
+test("allowlist: lrm rejected by default, accepted when configured", () => {
+  const obj = JSON.parse(fs.readFileSync(new URL("../examples/plugins/lrm-status.json", import.meta.url), "utf8"));
+  const rDefault = validateManifest(obj);
+  assert.ok(!rDefault.ok);
+  assert.match(rDefault.error, /allowlist/);
+  const rWith = validateManifest(obj, ["roforge", "lrm"]);
+  assert.ok(rWith.ok, rWith.error);
+  assert.equal(rWith.manifest.tools.length, 3);
+  assert.ok(rWith.manifest.tools.every((t) => t.requiresApproval === true), "command tools are gated");
+});
+
+test("allowlist: buildTools honors cfg.plugins.allowedCommands (sanitized)", async () => {
+  const cwd = tmpdir();
+  writePlugin(
+    path.join(cwd, "plugins"),
+    "lrm.json",
+    JSON.parse(fs.readFileSync(new URL("../examples/plugins/lrm-status.json", import.meta.url), "utf8"))
+  );
+  const info = await buildTools({
+    cfg: { plugins: { enabled: true, allowedCommands: ["roforge", "lrm", "Evil;rm", "/bin/sh"] } },
+    cwd,
+    bridgeServer: null,
+    luauAnalyzePath: null,
+  });
+  assert.ok(info.tools.some((t) => t.name === "lrm_repo_status"), "lrm tool loaded");
+  assert.deepEqual(
+    info.plugins.map((p) => p.name),
+    ["lrm-status"]
+  );
+  assert.deepEqual(info.pluginErrors, []);
+});
