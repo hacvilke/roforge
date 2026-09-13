@@ -14,7 +14,12 @@ roforge analyze <file...>   official Luau analyzer
 ## Install
 
 ```bash
-npm i -g roforge-cli
+# GitHub Packages (published — any GitHub token with read:packages works)
+npm config set @hacvilke:registry https://npm.pkg.github.com
+echo "//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN" >> ~/.npmrc
+npm i -g @hacvilke/roforge-cli
+
+# …or clone the repo and run `node cli/bin/roforge.js`
 roforge
 ```
 

@@ -63,9 +63,15 @@ roforge login --provider gemini    # or groq / openrouter / anthropic / openai
 roforge                            # interactive TUI in your project directory
 ```
 
-> Not on npm yet? Clone the repo and run `node cli/bin/roforge.js` — the npm
-> package is publish-ready (`npm pack --dry-run` in `cli/` shows a 24-file,
-> dependency-free tarball).
+> **Install options:** published on **GitHub Packages** as
+> `@hacvilke/roforge-cli` (any GitHub token with `read:packages` works):
+> ```bash
+> npm config set @hacvilke:registry https://npm.pkg.github.com
+> echo "//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN" >> ~/.npmrc
+> npm i -g @hacvilke/roforge-cli
+> ```
+> or simply clone the repo and run `node cli/bin/roforge.js`. The `roforge-cli`
+> npmjs package is publish-ready (24-file, dependency-free tarball).
 
 **No paid API yet?** The free tiers work out of the box: a free Gemini key
 (aistudio.google.com, ~1,500 req/day, no card), Groq (console.groq.com), or an
