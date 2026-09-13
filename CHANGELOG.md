@@ -3,6 +3,15 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.10 — 2026-09-13
+
+### Fixed
+- **0.3.9 npm package shipped stale plugin dists.** `cli/dist/` (the
+copy bundled into the npm package, used first by `roforge
+install-plugin`) had not been synced with the 0.3.9 rebuild, so npm
+installs still received the broken plugins. `cli/dist` is now synced
+with the rebuilt `studio-bridge/dist` and `client/dist`.
+
 ## 0.3.9 — 2026-09-13
 
 ### Fixed
