@@ -3,6 +3,36 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.19 — 2026-09-14
+
+### Fixed
+- **`forge_screenshot` / `forge_viewport` failed on current Studio**: the
+  capture object returned by `StudioCaptureService:CaptureScreenshot` was
+  read from the wrong variable, so both tools fell through to the removed
+  `game:Screenshot` API ("Screenshot is not a valid member of DataModel").
+  The capture object is now handled correctly in both plugins (file
+  screenshot + viewport base64 image).
+- **`forge_game_info` (bridge + client) used `RunService:IsPaused`, which
+  does not exist** ("IsPaused is not a valid member of RunService"). The
+  studio mode now comes from `IsRunning`/`IsStudio`, pcall-guarded.
+- **`forge_tree` rejected lowercase roots** ("unknown root 'workspace'").
+  Root names are case-insensitive now.
+- **Path errors on `forge_read`/`forge_write`/`forge_delete` raised a raw
+  error instead of a readable one**: the "no child named …" message itself
+  indexed the nil instance (bridge + client).
+
+### Added
+- **Tool execution tests in CI**: every `forge_*` tool (24 bridge / 9
+  client) now executes under a stubbed Studio harness, asserting no Roblox
+  API crash signatures ("is not a valid member", "attempt to call
+  missing", …) and matching the expected result text. The harness stubs
+  are verified against the current Roblox API dump
+  (`StudioCaptureService`, `Selection`, change history, `HttpService`
+  JSON).
+- **`roforge demo house`**: builds a small house into your open place
+  through the bridge (import → tree → screenshot) — a fast end-to-end
+  check that the tools produce real results in Studio.
+
 ## 0.3.18 — 2026-09-14
 
 ### Fixed

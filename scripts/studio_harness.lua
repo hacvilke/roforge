@@ -74,6 +74,9 @@ function V3T.new(x, y, z)
 	checkNums({ x, y, z }, 3)
 	return { _t = "Vector3", x = x, y = y, z = z }
 end
+local FAKE_PNG = string.char(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+	.. string.rep(string.char(0), 96)
+
 local CFT = {}
 function CFT.new(...)
 	local a = table.pack(...)
@@ -82,7 +85,16 @@ function CFT.new(...)
 	elseif a.n < 1 then
 		missingArg(1)
 	end
-	return {}
+	return setmetatable({}, {
+		__index = function(_, k)
+			if k == "ToHumanReadableString" then
+				return function()
+					return "0 0 0 | 1 0 0 | 0 1 0 | 0 0 1"
+				end
+			end
+			return nil
+		end,
+	})
 end
 
 local DWPInfoT = {}
@@ -215,7 +227,7 @@ local function describeType(v)
 	return type(v)
 end
 
-local created = {}local created = {}
+local created = {}
 local dockGuis = {}
 
 local function makeInstance(class, name)
@@ -249,6 +261,81 @@ local function makeInstance(class, name)
 					local out = {}
 					for _, c in pairs(self._children) do
 						table.insert(out, c)
+					end
+					return out
+				end
+			end
+			if k == "FindFirstChildOfClass" then
+				return function(self, cls)
+					for _, c in pairs(self._children) do
+						if c.ClassName == cls then
+							return c
+						end
+					end
+					return nil
+				end
+			end
+			if k == "FindFirstChildWhichIsA" then
+				return function(self, cls)
+					for _, c in pairs(self._children) do
+						if c.ClassName == cls then
+							return c
+						end
+					end
+					return nil
+				end
+			end
+			if k == "GetDescendants" then
+				return function(self)
+					local out = {}
+					local function walk(inst)
+						for _, c in pairs(inst._children) do
+							table.insert(out, c)
+							walk(c)
+						end
+					end
+					walk(self)
+					return out
+				end
+			end
+			if k == "IsDescendantOf" then
+				return function(self, other)
+					local pp = rawget(self, "_parent")
+					while pp do
+						if pp == other then
+							return true
+						end
+						pp = rawget(pp, "_parent")
+					end
+					return false
+				end
+			end
+			if k == "SetAttribute" then
+				return function(self, name, value)
+					rawset(self, "_attrs", rawget(self, "_attrs") or {})
+					rawset(self._attrs, name, value)
+				end
+			end
+			if k == "GetAttributes" then
+				return function(self)
+					return rawget(self, "_attrs") or {}
+				end
+			end
+			if k == "GetProperties" then
+				return function(self)
+					local out = {}
+					for prop, v in pairs(t._props) do
+						if type(v) ~= "function" and prop ~= "Parent" then
+							table.insert(out, {
+								Name = prop,
+								GetValue = function()
+									return rawget(t, prop)
+								end,
+								IsRequiredProperty = function()
+									return false
+								end,
+							})
+						end
 					end
 					return out
 				end
@@ -325,10 +412,263 @@ end
 
 -- ---------------------------------------------------------------- game -----
 
+-- Minimal JSON codec for the smoke/tools tests (the plugin tools route their
+-- JSON through HttpService). Strings, numbers, booleans, nil, arrays, objects.
+local function jsonDecode(text)
+	local pos = 1
+	local function err(msg)
+		error(("json: %s (at %d)"):format(msg, pos), 0)
+	end
+	local function ws()
+		while pos <= #text do
+			local c = text:sub(pos, pos)
+			if c == " " or c == "\t" or c == "\n" or c == "\r" then
+				pos = pos + 1
+			else
+				break
+			end
+		end
+	end
+	local parseValue
+	local function parseString()
+		pos = pos + 1
+		local out = {}
+		while pos <= #text do
+			local c = text:sub(pos, pos)
+			if c == '"' then
+				pos = pos + 1
+				return table.concat(out)
+			elseif c == "\\" then
+				local e = text:sub(pos + 1, pos + 1)
+				if e == "n" then
+					table.insert(out, "\n")
+				elseif e == "t" then
+					table.insert(out, "\t")
+				elseif e == "r" then
+					table.insert(out, "\r")
+				elseif e == '"' then
+					table.insert(out, '"')
+				elseif e == "\\" then
+					table.insert(out, "\\")
+				elseif e == "/" then
+					table.insert(out, "/")
+				elseif e == "b" then
+					table.insert(out, "\b")
+				elseif e == "f" then
+					table.insert(out, "\f")
+				elseif e == "u" then
+					local hex = text:sub(pos + 2, pos + 5)
+					local n = tonumber(hex, 16)
+					if n and n < 256 then
+						table.insert(out, string.char(n))
+					end
+					pos = pos + 4
+				else
+					table.insert(out, e)
+				end
+				pos = pos + 2
+			else
+				table.insert(out, c)
+				pos = pos + 1
+			end
+		end
+		err("unterminated string")
+	end
+	parseValue = function()
+		ws()
+		if pos > #text then
+			err("unexpected end of input")
+		end
+		local c = text:sub(pos, pos)
+		if c == '"' then
+			return parseString()
+		elseif c == "{" then
+			pos = pos + 1
+			local obj = {}
+			ws()
+			if text:sub(pos, pos) == "}" then
+				pos = pos + 1
+				return obj
+			end
+			while true do
+				ws()
+				if text:sub(pos, pos) ~= '"' then
+					err("expected object key string")
+				end
+				local k = parseString()
+				ws()
+				if text:sub(pos, pos) ~= ":" then
+					err("expected ':'")
+				end
+				pos = pos + 1
+				obj[k] = parseValue()
+				ws()
+				local d = text:sub(pos, pos)
+				if d == "," then
+					pos = pos + 1
+				elseif d == "}" then
+					pos = pos + 1
+					return obj
+				else
+					err("expected ',' or '}'")
+				end
+			end
+		elseif c == "[" then
+			pos = pos + 1
+			local arr = {}
+			ws()
+			if text:sub(pos, pos) == "]" then
+				pos = pos + 1
+				return arr
+			end
+			while true do
+				arr[#arr + 1] = parseValue()
+				ws()
+				local d = text:sub(pos, pos)
+				if d == "," then
+					pos = pos + 1
+				elseif d == "]" then
+					pos = pos + 1
+					return arr
+				else
+					err("expected ',' or ']'")
+				end
+			end
+		elseif c == "t" then
+			if text:sub(pos, pos + 3) == "true" then
+				pos = pos + 4
+				return true
+			end
+			err("invalid literal")
+		elseif c == "f" then
+			if text:sub(pos, pos + 4) == "false" then
+				pos = pos + 5
+				return false
+			end
+			err("invalid literal")
+		elseif c == "n" then
+			if text:sub(pos, pos + 3) == "null" then
+				pos = pos + 4
+				return nil
+			end
+			err("invalid literal")
+		else
+			local startp = pos
+			while pos <= #text do
+				local d = text:sub(pos, pos)
+				if d:match("[%d%-%.eE]") then
+					pos = pos + 1
+				else
+					break
+				end
+			end
+			local num = tonumber(text:sub(startp, pos - 1))
+			if not num then
+				err("invalid value")
+			end
+			return num
+		end
+	end
+	local v = parseValue()
+	ws()
+	return v
+end
+
+local function jsonEncode(v)
+	local function enc(v2)
+		local t = type(v2)
+		if t == "string" then
+			return '"' .. v2:gsub("[%c\"]", "\\%0") .. '"'
+		elseif t == "number" then
+			return tostring(v2)
+		elseif t == "boolean" then
+			return v2 and "true" or "false"
+		elseif t == "nil" then
+			return "null"
+		elseif t == "table" then
+			local isArr = true
+			local n = 0
+			for k in pairs(v2) do
+				n = n + 1
+				if k ~= n then
+					isArr = false
+					break
+				end
+			end
+			if isArr then
+				local parts = {}
+				for i = 1, n do
+					parts[i] = enc(v2[i])
+				end
+				return "[" .. table.concat(parts, ",") .. "]"
+			end
+			local parts = {}
+			for k, val in pairs(v2) do
+				if type(val) ~= "function" then
+					parts[#parts + 1] = '"' .. tostring(k):gsub("[%c\"]", "\\%0") .. '":' .. enc(val)
+				end
+			end
+			return "{" .. table.concat(parts, ",") .. "}"
+		end
+		return "null"
+	end
+	return enc(v)
+end
+
 local services = {}
-local function getService(name)
+local changeHistoryIndex = 10
+local function getService(name, fallback)
+	-- called both as game:GetService("X") (self arrives as `name`) and
+	-- getService("X")
+	if type(name) ~= "string" then
+		name = fallback
+	end
+	if type(name) ~= "string" then
+		name = "Unknown"
+	end
 	-- services are real instances (they carry Name/ClassName like in Studio),
 	-- with the few methods the plugins use attached as properties
+	if not services[name] and name == "Selection" then
+		local inst = makeInstance(name)
+		local sel = {}
+		inst._props.Set = function(_, instances)
+			if type(instances) == "table" then
+				sel = instances
+			end
+		end
+		inst._props.Get = function()
+			return sel
+		end
+		services[name] = inst
+		return inst
+	end
+	if not services[name] and name == "StudioCaptureService" then
+		local inst = makeInstance(name)
+		local props = inst._props
+		props.CanCaptureScreenshot = function()
+			return true
+		end
+		props.RequestScreenshotPermissionAsync = function()
+			return true
+		end
+		props.CaptureScreenshot = function()
+			return {
+				BufferStatus = EnumT.StudioCaptureBufferStatus.Ready,
+				GetBuffer = function()
+					return {
+						ToString = function()
+							return FAKE_PNG
+						end,
+					}
+				end,
+				GetErrors = function()
+					return {}
+				end,
+			}
+		end
+		services[name] = inst
+		return inst
+	end
 	if not services[name] then
 		local inst = makeInstance(name)
 		local props = inst._props
@@ -339,22 +679,36 @@ local function getService(name)
 			return { Success = false, StatusCode = 0, Body = "smoke stub" }
 		end
 		props.JSONEncode = function(_, t)
-			return tostring(t)
+			return jsonEncode(t)
 		end
-		props.JSONDecode = function()
-			return {}
+		props.JSONDecode = function(_, text)
+			local ok, v = pcall(jsonDecode, tostring(text))
+			if not ok then
+				error(tostring(v), 0)
+			end
+			return v
 		end
 		props.Get = function()
 			return {}
 		end
+		props.Set = function()
+		end
 		props.IsRunning = function()
 			return false
 		end
-		props.IsPaused = function()
-			return false
+		props.IsStudio = function()
+			return true
 		end
 		props.IsStepped = function()
 			return false
+		end
+		props.SetChangePoint = function()
+		end
+		props.ChangeHistoryIndex = function()
+			return changeHistoryIndex
+		end
+		props.SetChangeHistoryIndex = function(_, i)
+			changeHistoryIndex = math.floor(tonumber(i) or changeHistoryIndex)
 		end
 		services[name] = inst
 	end
@@ -371,6 +725,26 @@ gameT = setmetatable({
 		if k == "GetService" then
 			return getService
 		end
+		if k == "GetDescendants" then
+			return function()
+				local out = {}
+				if not workspaceInst then
+					workspaceInst = makeInstance("Workspace")
+				end
+				table.insert(out, workspaceInst)
+				local function walk(inst)
+					for _, c in pairs(inst._children or {}) do
+						table.insert(out, c)
+						walk(c)
+					end
+				end
+				walk(workspaceInst)
+				for _, svc in pairs(services) do
+					table.insert(out, svc)
+				end
+				return out
+			end
+		end
 		if k == "Workspace" or k == "workspace" then
 			if not workspaceInst then
 				workspaceInst = makeInstance("Workspace")
@@ -384,6 +758,14 @@ gameT = setmetatable({
 -- ------------------------------------------------------------- plugin ------
 
 local pluginT = {}
+function pluginT:ReadFile(path)
+	return FAKE_PNG
+end
+function pluginT:WriteFile(path, data)
+	env = env or {}
+	env.writtenFiles = env.writtenFiles or {}
+	env.writtenFiles[path] = data
+end
 function pluginT:GetSetting(key)
 	return pluginT._settings and pluginT._settings[key] or nil
 end
@@ -439,6 +821,7 @@ function M.install()
 		dockGuis = dockGuis,
 		prints = {},
 		warns = {},
+		writtenFiles = {},
 		plugin = plugin,
 	}
 	pluginT._settings = {}

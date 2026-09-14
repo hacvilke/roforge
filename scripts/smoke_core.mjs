@@ -51,6 +51,8 @@ function luaObj(v) {
 //   dockIds      — dock gui ids that must exist after start()
 //   needles      — substrings that must appear in captured print() output
 //   label
+export { luaString, luaObj };
+
 export function makeSmokeLua(cfg) {
   const harnessSrc = readFileSync(cfg.harnessPath, "utf8");
   const sourcesLua = Object.entries(cfg.sources)

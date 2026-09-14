@@ -82,11 +82,12 @@ local function systemPrompt(tools)
 	pcall(function()
 		jobId = job.get("id")
 	end)
-	local mode = "Edit"
-	if RunService:IsRunning() then
-		mode = "Play"
-	elseif RunService:IsPaused() then
-		mode = "Paused"
+	local mode
+	do
+		local ok, isRunning = pcall(function()
+			return RunService:IsRunning()
+		end)
+		mode = (ok and isRunning) and "Play" or "Edit"
 	end
 
 	local prompt = [[

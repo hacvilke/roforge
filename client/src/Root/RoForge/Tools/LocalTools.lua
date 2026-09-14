@@ -32,7 +32,7 @@ do
 		game:GetService("StarterPack"),
 	}
 	for _, inst in ipairs(roots) do
-		ROOT_NAMES[inst.Name] = inst
+		ROOT_NAMES[inst.Name:lower()] = inst
 	end
 end
 
@@ -53,7 +53,7 @@ local function resolvePath(pathStr)
 	if #parts == 0 then
 		return nil, "path is required"
 	end
-	local root = ROOT_NAMES[parts[1]]
+	local root = ROOT_NAMES[parts[1]:lower()]
 	if not root then
 		local valid = {}
 		for name in pairs(ROOT_NAMES) do
@@ -64,10 +64,11 @@ local function resolvePath(pathStr)
 	end
 	local inst = root
 	for i = 2, #parts do
-		inst = inst:FindFirstChild(parts[i])
-		if not inst then
+		local child = inst:FindFirstChild(parts[i])
+		if not child then
 			return nil, "no child named '" .. parts[i] .. "' under " .. inst:GetFullName()
 		end
+		inst = child
 	end
 	return inst
 end
@@ -77,7 +78,7 @@ local function createMissing(pathStr, finalClass)
 	if #parts < 2 then
 		return nil
 	end
-	local root = ROOT_NAMES[parts[1]]
+	local root = ROOT_NAMES[parts[1]:lower()]
 	if not root then
 		return nil
 	end
@@ -136,7 +137,7 @@ end
 local function forgeTree(args)
 	local rootName = tostring(args.root or "workspace")
 	local maxDepth = math.clamp(tonumber(args.max_depth) or 3, 1, 6)
-	local root = ROOT_NAMES[rootName]
+	local root = ROOT_NAMES[rootName:lower()]
 	if not root then
 		return "ERROR: unknown root '" .. rootName .. "'"
 	end
@@ -282,25 +283,120 @@ local function forgeRun(args)
 	end
 end
 
-local function forgeScreenshot(args)
-	local name = tostring(args.name or ("roforge_" .. os.time()))
-	local ok, err = pcall(function()
-		game:Screenshot(name, tonumber(args.width) or 1280, tonumber(args.height) or 720)
+local PNG_SIG = string.char(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
+-- Modern Studio builds removed DataModel:Screenshot; the plugin capture API
+-- is StudioCaptureService (added ~0.714). Returns PNG bytes, or nil + reason.
+local function studioCaptureBytes(w, h)
+	local okSvc, svc = pcall(function()
+		return game:GetService("StudioCaptureService")
 	end)
-	if not ok then
-		return "ERROR: screenshot failed: " .. tostring(err)
+	if not okSvc or not svc then
+		return nil, "StudioCaptureService unavailable"
 	end
-	return ("Screenshot saved as '%s.png' on your computer (Studio screenshot folder)."):format(name)
-		.. " Note: image-vision support is coming — I cannot view the image yet."
+	local okCan, can = pcall(svc.CanCaptureScreenshot, svc)
+	if okCan and can == false then
+		pcall(svc.RequestScreenshotPermissionAsync, svc)
+	end
+	local cap
+	local okCap, capRet = pcall(function()
+		return svc:CaptureScreenshot({
+			Width = w,
+			Height = h,
+			BufferFormat = Enum.StudioCaptureScreenshotFormat.PNG,
+			UICaptureMode = Enum.UICaptureMode.All,
+		})
+	end)
+	if okCap and capRet then
+		cap = capRet
+	end
+	if not cap then
+		local okRetry, retryRet = pcall(function()
+			return svc:CaptureScreenshot({})
+		end)
+		if okRetry and retryRet then
+			cap = retryRet
+		else
+			return nil, "CaptureScreenshot failed: " .. tostring(retryRet)
+		end
+	end
+	-- bounded wait for the render buffer
+	for _ = 1, 50 do
+		local okSt, st = pcall(function()
+			return cap.BufferStatus
+		end)
+		if okSt then
+			local okReady, isReady = pcall(function()
+				return st == Enum.StudioCaptureBufferStatus.Ready
+			end)
+			if okReady and isReady then
+				break
+			end
+			local okErr, isErr = pcall(function()
+				return st == Enum.StudioCaptureBufferStatus.Error
+			end)
+			if okErr and isErr then
+				local okGe, errs = pcall(cap.GetErrors, cap)
+				return nil, "capture error: " .. tostring(okGe and table.concat(errs, "; ") or "unknown")
+			end
+		end
+		task.wait(0.1)
+	end
+	local okBuf, buf = pcall(cap.GetBuffer, cap)
+	if not okBuf or not buf then
+		return nil, "GetBuffer failed: " .. tostring(buf)
+	end
+	local okStr, bytes = pcall(function()
+		return buf:ToString()
+	end)
+	if not okStr or type(bytes) ~= "string" or #bytes < 8 then
+		return nil, "could not read the capture buffer"
+	end
+	return bytes
+end
+
+local function forgeScreenshot(args)
+	local name = tostring(args.name or ("roforge_" .. tostring(os.time()))):gsub("[^%w%-_]", "_")
+	local w = tonumber(args.width) or 1280
+	local h = tonumber(args.height) or 720
+	local bytes, capErr = studioCaptureBytes(w, h)
+	if bytes and bytes:sub(1, 8) == PNG_SIG then
+		local okW = pcall(function()
+			plugin:WriteFile("Screenshots/" .. name .. ".png", bytes)
+		end)
+		if okW then
+			return ("Screenshot saved to the RoForge plugin storage folder (Screenshots/%s.png) — open it via Manage Plugins → the RoForge plugin → folder icon.")
+				:format(name)
+				.. " (Vision of the viewport goes through the bridge — ask for forge_viewport.)"
+		end
+		return "ERROR: screenshot captured but could not be saved to plugin storage"
+	end
+	-- Legacy builds (before StudioCaptureService): DataModel:Screenshot wrote
+	-- straight to a system folder
+	local okOld = pcall(function()
+		game:Screenshot(w, h, name, Enum.Folder.Desktop)
+	end)
+	if okOld then
+		return ("Screenshot saved as '%s.png' on your Desktop (legacy Studio build)."):format(name)
+			.. " (Vision of the viewport goes through the bridge — ask for forge_viewport.)"
+	end
+	return "ERROR: screenshot failed: " .. tostring(capErr or "unknown error")
+end
+
+-- RunService has no IsPaused in current Studio builds (it crashes); a
+-- paused game still reports IsRunning() = true, so the paused sub-state is
+-- not reported.
+local function studioMode()
+	local ok, isRunning = pcall(function()
+		return RunService:IsRunning()
+	end)
+	if ok and isRunning then
+		return "Play"
+	end
+	return "Edit"
 end
 
 local function forgeGameInfo()
-	local mode = "Edit"
-	if RunService:IsRunning() then
-		mode = "Play"
-	elseif RunService:IsPaused() then
-		mode = "Paused"
-	end
+	local mode = studioMode()
 	local jobId = "unknown"
 	pcall(function()
 		jobId = job.get("id")

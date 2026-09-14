@@ -331,6 +331,58 @@ async function main() {
       return;
     }
 
+    case "demo": {
+      const which = flags._pos && flags._pos[0];
+      if (which !== "house") {
+        console.error(red("usage: roforge demo house"));
+        process.exit(1);
+      }
+      const housePath = path.resolve(path.dirname(process.argv[1]), "../src/demo/house.json");
+      const house = JSON.parse(fs.readFileSync(housePath, "utf8"));
+      const bridge = new BridgeServer({ port: cfg.bridge.port, host: cfg.bridge.host, token: cfg.bridge.token });
+      try {
+        await bridge.start();
+      } catch (e) {
+        console.error(red(`bridge could not start on port ${cfg.bridge.port}: ${e.message}`));
+        process.exit(1);
+      }
+      console.log(bold("RoForge demo — building a house in your open place") + "\n");
+      console.log(dim(`waiting for the RoForge Bridge plugin @ http://${cfg.bridge.host}:${cfg.bridge.port} ...`));
+      const deadline = Date.now() + 60_000;
+      while (!bridge.connected && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      if (!bridge.connected) {
+        console.error(red("timed out waiting for the bridge plugin."));
+        console.error(dim("  is Studio open with a place loaded and the RoForge Bridge plugin active?"));
+        console.error(dim(`  is the bridge token pasted into the plugin dock? (token: ${cfg.bridge.token})`));
+        bridge.stop();
+        process.exit(1);
+      }
+      console.log(green("bridge connected — importing the house") + "\n");
+      const rImport = await bridge.submit("forge_import", { json: JSON.stringify(house), parent: "workspace" }, { timeoutMs: 60_000 });
+      if (!rImport.ok) {
+        console.error(red(`forge_import failed: ${rImport.error}`));
+        bridge.stop();
+        process.exit(1);
+      }
+      console.log(green(rImport.result) + "\n");
+      const rTree = await bridge.submit("forge_tree", { root: "workspace", max_depth: 2 }, { timeoutMs: 30_000 });
+      if (rTree.ok) {
+        console.log(dim("workspace now contains:"));
+        console.log(rTree.result + "\n");
+      }
+      const rShot = await bridge.submit("forge_screenshot", { name: "roforge_demo_house" }, { timeoutMs: 30_000 });
+      if (rShot.ok) {
+        console.log(green(rShot.result));
+      } else {
+        console.log(dim(`(screenshot skipped: ${rShot.error})`));
+      }
+      console.log("\n" + dim("done — rotate the camera and look for 'RoForgeHouse' in workspace."));
+      bridge.stop();
+      return;
+    }
+
     case "help":
     case "--help":
     case "-h": {
@@ -447,6 +499,7 @@ ${bold("Usage")}
   roforge install-plugin [bridge|client]   install a plugin into Studio (default: bridge)
                                           --name <file> installs under a different filename
   roforge pro                 show RoForge Pro license status (needs Studio bridge)
+  roforge demo house          build the demo house in your open place (needs the bridge plugin)
   roforge analyze <file...>   run the official Luau analyzer on files
   roforge config [set k v]    show / set configuration
   roforge version

@@ -85,6 +85,11 @@ jobs:
           LUAU=$(realpath "$(find bin -type f -name luau | head -1)")
           (cd studio-bridge && node test/validate_smoke.mjs "$LUAU")
           (cd client && node test/validate_smoke.mjs "$LUAU")
+      - name: tool execution tests — run every forge_* tool under the stubbed Studio
+        run: |
+          LUAU=$(realpath "$(find bin -type f -name luau | head -1)")
+          (cd studio-bridge && node test/validate_tools.mjs "$LUAU")
+          (cd client && node test/validate_tools.mjs "$LUAU")
       - name: rojo build — bridge + client + HQ
         run: |
           ROJO=$(find bin -type f -name rojo | head -1)

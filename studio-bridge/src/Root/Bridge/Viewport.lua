@@ -3,7 +3,7 @@
 --
 -- Three capture strategies, each pcall-guarded; the first success wins:
 --   A. RenderSurfaceTexture of workspace.CurrentCamera → Image:Read() → PngEncoder
---   B. ImageLabel:CaptureScreenshot() → plugin:ReadFile(path) → base64
+--   B. StudioCaptureService:CaptureScreenshot() → GetBuffer() → base64
 --   C. descriptive error (the model falls back to forge_screenshot)
 
 local Viewport = {}
@@ -21,8 +21,6 @@ end
 local function maxH()
 	return Pro.limit("viewport_max_height")
 end
-
-local pluginRef = nil
 
 local function clampDim(v, lo, hi, def)
 	local n = tonumber(v)
@@ -76,33 +74,83 @@ end
 
 local PNG_SIG = string.char(0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
 
-local function tryImageLabel()
-	if not pluginRef then
-		return nil, "no plugin reference"
-	end
-	local okPath, path = pcall(function()
-		local il = Instance.new("ImageLabel")
-		local p = il:CaptureScreenshot()
-		il:Destroy()
-		return p
+local function tryStudioCapture(w, h)
+	-- StudioCaptureService (added ~0.714) is the current plugin viewport
+	-- capture API; DataModel:Screenshot and the old ImageLabel flow are gone.
+	local okSvc, svc = pcall(function()
+		return game:GetService("StudioCaptureService")
 	end)
-	if not okPath or type(path) ~= "string" or path == "" then
-		return nil, "CaptureScreenshot failed"
+	if not okSvc or not svc then
+		return nil, "StudioCaptureService unavailable"
 	end
-	local okBytes, bytes = pcall(function()
-		return pluginRef:ReadFile(path)
+	local okCan, can = pcall(svc.CanCaptureScreenshot, svc)
+	if okCan and can == false then
+		pcall(svc.RequestScreenshotPermissionAsync, svc)
+	end
+	local cap
+	local okCap, capRet = pcall(function()
+		return svc:CaptureScreenshot({
+			Width = w,
+			Height = h,
+			BufferFormat = Enum.StudioCaptureScreenshotFormat.PNG,
+			UICaptureMode = Enum.UICaptureMode.All,
+		})
 	end)
-	if not okBytes or type(bytes) ~= "string" or #bytes < 64 then
-		return nil, "ReadFile failed"
+	if okCap and capRet then
+		cap = capRet
 	end
-	if bytes:sub(1, 8) ~= PNG_SIG then
-		return nil, "screenshot is not a PNG"
+	if not cap then
+		local okRetry, retryRet = pcall(function()
+			return svc:CaptureScreenshot({})
+		end)
+		if okRetry and retryRet then
+			cap = retryRet
+		else
+			return nil, "CaptureScreenshot failed: " .. tostring(retryRet)
+		end
 	end
-	return Png.b64encode(bytes)
+	for _ = 1, 50 do
+		local okSt, st = pcall(function()
+			return cap.BufferStatus
+		end)
+		if okSt then
+			local okReady, isReady = pcall(function()
+				return st == Enum.StudioCaptureBufferStatus.Ready
+			end)
+			if okReady and isReady then
+				break
+			end
+			local okErr, isErr = pcall(function()
+				return st == Enum.StudioCaptureBufferStatus.Error
+			end)
+			if okErr and isErr then
+				local okGe, errs = pcall(cap.GetErrors, cap)
+				return nil, "capture error: " .. tostring(okGe and table.concat(errs, "; ") or "unknown")
+			end
+		end
+		task.wait(0.1)
+	end
+	local okBuf, buf = pcall(cap.GetBuffer, cap)
+	if not okBuf or not buf then
+		return nil, "GetBuffer failed: " .. tostring(buf)
+	end
+	local okStr, bytes = pcall(function()
+		return buf:ToString()
+	end)
+	if not okStr or type(bytes) ~= "string" or #bytes < 64 then
+		return nil, "could not read the capture buffer"
+	end
+	if bytes:sub(1, 8) == PNG_SIG then
+		return Png.b64encode(bytes)
+	end
+	local expected = w * h * 4
+	if #bytes == expected then
+		return Png.b64encode(Png.encode(w, h, bytes))
+	end
+	return nil, ("unexpected buffer size %d"):format(#bytes)
 end
 
-function Viewport.init(plugin)
-	pluginRef = plugin
+function Viewport.init(_plugin)
 end
 
 -- args: {width?, height?}
@@ -124,7 +172,7 @@ function Viewport.capture(args)
 	end
 	failures[#failures + 1] = "RenderSurfaceTexture: " .. tostring(okA and whyA or b64A)
 
-	local okB, b64B, whyB = pcall(tryImageLabel)
+	local okB, b64B, whyB = pcall(tryStudioCapture, w, h)
 	if okB and b64B then
 		return {
 			text = ("Viewport captured at %dx%d (CaptureScreenshot)."):format(w, h),
@@ -132,7 +180,7 @@ function Viewport.capture(args)
 			mediaType = "image/png",
 		}
 	end
-	failures[#failures + 1] = "ImageLabel: " .. tostring(okB and whyB or b64B)
+	failures[#failures + 1] = "StudioCapture: " .. tostring(okB and whyB or b64B)
 
 	return "ERROR: could not capture the viewport. "
 		.. table.concat(failures, " | ")
