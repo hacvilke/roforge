@@ -429,16 +429,39 @@ function Bridge.start(plugin)
 	end)
 
 	-- toolbar
-	local toolbar = plugin:CreateToolbar("RoForge Bridge")
-	local toggle = toolbar:CreateButton("Bridge", "Open or close the RoForge Bridge status")
-	toggle.ClickableWhenOff = true
-	toggle:SetActive(true)
-	toggle.Click:Connect(function()
-		local visible = not dock.Visible
-		dock.Enabled = visible
-		dock.Visible = visible
-		toggle:SetActive(visible)
+	-- Toolbar + toggle button. Best effort: newer Studio builds validate
+	-- CreateButton differently (a third icon argument); the dock is the primary UI.
+	local toggle = nil
+	local okTb, toolbar = pcall(function()
+		return plugin:CreateToolbar("RoForge Bridge")
 	end)
+	if okTb and toolbar then
+		local okB, btn = pcall(function()
+			-- modern builds: (buttonId, tooltip, iconname, text); icon "" = text-only button.
+			-- older 3-arg binding reads (text, tooltip, iconname); extra arg is ignored.
+			return toolbar:CreateButton("Bridge", "Open or close the RoForge Bridge status", "", "Bridge")
+		end)
+		if not okB then
+			okB, btn = pcall(function()
+				return toolbar:CreateButton("Bridge", "Open or close the RoForge Bridge status")
+			end)
+		end
+		if okB and btn then
+			toggle = btn
+		else
+			warn("\[RoForge Bridge] could not create toolbar button (%s); if you close the dock, re-open it from Studio's Widgets menu." % tostring(btn))
+		end
+	end
+	if toggle then
+		toggle.ClickableWhenOff = true
+		toggle:SetActive(true)
+		toggle.Click:Connect(function()
+			local visible = not dock.Visible
+			dock.Enabled = visible
+			dock.Visible = visible
+			toggle:SetActive(visible)
+		end)
+	end
 
 	-- start the loop
 	state.Running = true

@@ -257,16 +257,39 @@ function RoForge.start(plugin)
 	dock.Name = "RoForge"
 	dock.Title = "RoForge AI"
 
-	local toolbar = plugin:CreateToolbar("RoForge")
-	local toggle = toolbar:CreateButton("RoForge", "Open or close the RoForge chat")
-	toggle.ClickableWhenOff = true
-	toggle:SetActive(true)
-	toggle.Click:Connect(function()
-		local visible = not dock.Visible
-		dock.Enabled = visible
-		dock.Visible = visible
-		toggle:SetActive(visible)
+	-- Toolbar + toggle button. Best effort: newer Studio builds validate
+	-- CreateButton differently (a third icon argument); the dock is the primary UI.
+	local toggle = nil
+	local okTb, toolbar = pcall(function()
+		return plugin:CreateToolbar("RoForge")
 	end)
+	if okTb and toolbar then
+		local okB, btn = pcall(function()
+			-- modern builds: (buttonId, tooltip, iconname, text); icon "" = text-only button.
+			-- older 3-arg binding reads (text, tooltip, iconname); extra arg is ignored.
+			return toolbar:CreateButton("RoForge", "Open or close the RoForge chat", "", "RoForge")
+		end)
+		if not okB then
+			okB, btn = pcall(function()
+				return toolbar:CreateButton("RoForge", "Open or close the RoForge chat")
+			end)
+		end
+		if okB and btn then
+			toggle = btn
+		else
+			warn("\[RoForge] could not create toolbar button (%s); if you close the dock, re-open it from Studio's Widgets menu." % tostring(btn))
+		end
+	end
+	if toggle then
+		toggle.ClickableWhenOff = true
+		toggle:SetActive(true)
+		toggle.Click:Connect(function()
+			local visible = not dock.Visible
+			dock.Enabled = visible
+			dock.Visible = visible
+			toggle:SetActive(visible)
+		end)
+	end
 
 	ui = UI.init(dock, {
 		getConfig = function()

@@ -3,6 +3,18 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.15 — 2026-09-14
+
+### Fixed
+- **"Argument 3 missing or nil" at plugin startup (both plugins)**: the
+  traceback pointed at `toolbar:CreateButton(label, tooltip)`. Recent Studio
+  builds use the signature `CreateButton(buttonId, tooltip, iconname, text)`
+  where the icon argument is required. Plugins now call the full
+  `(id, tooltip, icon, text)` form (empty icon = text-only button, matching
+  the documented Icon fallback) and fall back to the classic 2-argument form
+  on older builds. If neither works the plugin still starts — the dock is
+  the primary UI — and Output explains where to re-open it.
+
 ## 0.3.14 — 2026-09-14
 
 ### Fixed

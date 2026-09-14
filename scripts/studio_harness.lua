@@ -401,10 +401,14 @@ function pluginT:CreateDockWidgetPluginGui(id, info)
 end
 function pluginT:CreateToolbar(name)
 	local bar = makeInstance("PluginToolbar", name or "Toolbar")
-	rawset(bar._props, "CreateButton", function(self, label, tooltip)
-		if label == nil then missingArg(1) end
-		local btn = makeInstance("PluginToolbarButton", label)
+	rawset(bar._props, "CreateButton", function(self, buttonId, tooltip, iconname, text)
+		-- real spec (robloxapi): CreateButton(buttonId, tooltip, iconname, text = nil)
+		if buttonId == nil then missingArg(1) end
+		if tooltip == nil then missingArg(2) end
+		local visible = if text ~= nil then text else buttonId
+		local btn = makeInstance("PluginToolbarButton", visible)
 		rawset(btn._props, "ToolTip", tooltip)
+		rawset(btn._props, "Icon", if iconname ~= nil then iconname else "")
 		table.insert(bar._children, btn)
 		return btn
 	end)
