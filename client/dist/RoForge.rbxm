@@ -1335,7 +1335,8 @@ local builder = require(script.UiBuilder)
 local mk, COLORS, FONT = builder.mk, builder.COLORS, builder.FONT
 
 function UI.init(dock, hooks)
-	dock.BackgroundColor3 = COLORS.Bg
+	-- NOTE: DockWidgetPluginGui has no BackgroundColor3 — the Root Frame
+	-- created below paints the widget background instead.
 
 	local root = mk("Frame", {
 		Name = "Root",

@@ -3,6 +3,18 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.13 — 2026-09-14
+
+### Fixed
+- **Plugins failed to start in Studio** with "BackgroundColor3 is not a
+  valid member of DockWidgetPluginGui" (bridge) and a follow-on startup
+  error (client): the dock widget had a background color set on it, but
+  `DockWidgetPluginGui` has no such property. The dock's root Frame paints
+  the background instead.
+- New **plugin smoke tests** (CI + local): each plugin's full `start()`
+  now runs under a stubbed Studio that replicates the engine's strict
+  property and argument checks, so this bug class is caught before ship.
+
 ## 0.3.12 — 2026-09-13
 
 ### Fixed

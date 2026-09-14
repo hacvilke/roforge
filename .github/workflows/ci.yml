@@ -78,6 +78,11 @@ jobs:
           exit $status
       - name: require-path checker — every script.* require must resolve in the tree
         run: node scripts/check_plugin_requires.mjs
+      - name: plugin smoke tests — run each plugin's start() under the stubbed Studio
+        run: |
+          LUAU=$(realpath "$(find bin -type f -name luau | head -1)")
+          (cd studio-bridge && node test/validate_smoke.mjs "$LUAU")
+          (cd client && node test/validate_smoke.mjs "$LUAU")
       - name: rojo build — bridge + client + HQ
         run: |
           ROJO=$(find bin -type f -name rojo | head -1)

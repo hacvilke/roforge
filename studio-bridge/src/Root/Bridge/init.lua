@@ -242,7 +242,8 @@ function Bridge.start(plugin)
 	local dock = plugin:CreateDockWidgetPluginGui("RoForgeBridge", widgetInfo)
 	dock.Name = "RoForgeBridge"
 	dock.Title = "RoForge Bridge"
-	dock.BackgroundColor3 = Color3.fromRGB(24, 26, 31)
+	-- NOTE: DockWidgetPluginGui has no BackgroundColor3 — the Root Frame
+	-- created below paints the widget background instead.
 
 	local mk = function(class, props)
 		local inst = Instance.new(class)
