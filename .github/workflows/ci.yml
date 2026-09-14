@@ -78,6 +78,8 @@ jobs:
           exit $status
       - name: require-path checker — every script.* require must resolve in the tree
         run: node scripts/check_plugin_requires.mjs
+      - name: Luau API checker — reject string methods that don't exist in Luau (trim, split, ...)
+        run: node scripts/check_luau_api.mjs
       - name: plugin smoke tests — run each plugin's start() under the stubbed Studio
         run: |
           LUAU=$(realpath "$(find bin -type f -name luau | head -1)")

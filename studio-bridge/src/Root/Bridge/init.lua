@@ -15,6 +15,11 @@ local ExtraTools = require(script.ExtraTools)
 local Viewport = require(script.Viewport)
 local Pro = require(script.Pro)
 
+-- Luau has no string.trim
+local function trim(s)
+	return (s:match("^%s*(.-)%s*$"))
+end
+
 local Bridge = {}
 
 local Settings = {
@@ -29,6 +34,7 @@ local Settings = {
 local state = {
 	Running = false,
 	Connected = false,
+	LastError = nil,
 	LastTool = nil,
 	LastResultOk = nil,
 	JobCount = 0,
@@ -60,15 +66,27 @@ local function authHeaders()
 end
 
 local function ping()
-	local resp = Http.request("GET", apiPath("/v1/bridge/ping"), authHeaders())
-	if not resp or resp.StatusCode ~= 200 then
-		if state.Connected then
-			state.Connected = false
+	local resp, err = Http.request("GET", apiPath("/v1/bridge/ping"), authHeaders())
+	if not resp then
+		local e = tostring(err)
+		state.LastError = "no connection: " .. e:sub(1, 100)
+		local el = e:lower()
+		if el:find("not enabled", 1, true) or el:find("allow http", 1, true) then
+			state.LastError = "HTTP disabled in Studio → enable Game Settings > Security > Allow HTTP Requests"
 		end
-		return false
+	elseif resp.StatusCode == 401 then
+		state.LastError = "HTTP 401 — token mismatch. Copy the token from the `roforge` terminal line and re-save it here."
+	elseif resp.StatusCode ~= 200 then
+		state.LastError = "HTTP " .. tostring(resp.StatusCode)
+	else
+		state.LastError = nil
+		state.Connected = true
+		return true
 	end
-	state.Connected = true
-	return true
+	if state.Connected then
+		state.Connected = false
+	end
+	return false
 end
 
 local function pollJob()
@@ -159,6 +177,7 @@ local function runLoop()
 end
 
 local statusLabel
+local errorLabel
 local lastToolLabel
 local jobCountLabel
 local proLabel
@@ -177,6 +196,9 @@ local function updateStatusUi()
 	else
 		statusLabel.Text = "○ Waiting for roforge CLI…"
 		statusLabel.TextColor3 = Color3.fromRGB(150, 156, 168)
+	end
+	if errorLabel then
+		errorLabel.Text = (not state.Connected and state.LastError) or ""
 	end
 	if lastToolLabel then
 		lastToolLabel.Text = state.LastTool and ("last job: " .. state.LastTool) or "no jobs yet"
@@ -280,6 +302,17 @@ function Bridge.start(plugin)
 		Size = UDim2.new(1, 0, 0, 20),
 		Parent = root,
 	})
+	errorLabel = mk("TextLabel", {
+		BackgroundTransparency = 1,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextWrapped = true,
+		Text = "",
+		TextColor3 = Color3.fromRGB(255, 140, 120),
+		Size = UDim2.new(1, 0, 0, 30),
+		Parent = root,
+	})
+	errorLabel.TextXAlignment = Enum.TextXAlignment.Left
 	lastToolLabel = mk("TextLabel", {
 		BackgroundTransparency = 1,
 		Font = Enum.Font.Gotham,
@@ -312,9 +345,9 @@ function Bridge.start(plugin)
 		Font = Enum.Font.Gotham,
 		TextSize = 12,
 		TextWrapped = true,
-		Text = "Run `roforge` in your terminal.\nPaste the bridge token from `roforge studio` below.",
+		Text = "Run `roforge` in your terminal, then paste its token below and Save.\nPro ids stay blank unless you published the RoForge Pro pass.\nStill waiting? Enable Game Settings > Security > Allow HTTP Requests.",
 		TextColor3 = Color3.fromRGB(150, 156, 168),
-		Size = UDim2.new(1, 0, 0, 32),
+		Size = UDim2.new(1, 0, 0, 48),
 		Parent = root,
 	})
 	hint.TextXAlignment = Enum.TextXAlignment.Left
@@ -378,10 +411,10 @@ function Bridge.start(plugin)
 		Parent = root,
 	})
 	saveBtn.MouseButton1Click:Connect(function()
-		Settings.Url = (urlBox.Text or ""):trim()
-		Settings.Token = (tokenBox.Text or ""):trim()
-		Settings.ProGamePassId = math.max(0, math.floor(tonumber((passIdBox.Text or ""):trim()) or 0))
-		Settings.ProDevProductId = math.max(0, math.floor(tonumber((devProductIdBox.Text or ""):trim()) or 0))
+		Settings.Url = trim(urlBox.Text or "")
+		Settings.Token = trim(tokenBox.Text or "")
+		Settings.ProGamePassId = math.max(0, math.floor(tonumber(trim(passIdBox.Text or "")) or 0))
+		Settings.ProDevProductId = math.max(0, math.floor(tonumber(trim(devProductIdBox.Text or "")) or 0))
 		pcall(function()
 			plugin:SetSetting("Url", Settings.Url)
 		end)

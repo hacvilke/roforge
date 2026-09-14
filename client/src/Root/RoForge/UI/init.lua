@@ -5,6 +5,11 @@
 local UI = {}
 
 local builder = require(script.UiBuilder)
+
+-- Luau has no string.trim
+local function trim(s)
+	return (s:match("^%s*(.-)%s*$"))
+end
 local mk, COLORS, FONT = builder.mk, builder.COLORS, builder.FONT
 
 function UI.init(dock, hooks)
@@ -297,14 +302,14 @@ function UI.init(dock, hooks)
 
 	addButton("Save settings", COLORS.Accent, function()
 		local cfg = table.clone(cfg0)
-		cfg.Provider = (rows[1].Text or ""):lower():trim()
+		cfg.Provider = trim((rows[1].Text or ""):lower())
 		if cfg.Provider ~= "openai" then
 			cfg.Provider = "anthropic"
 		end
-		cfg.Model = (rows[2].Text or ""):trim()
-		cfg.ApiKey = (rows[3].Text or ""):trim()
-		cfg.BackendUrl = (rows[4].Text or ""):trim()
-		cfg.SessionToken = (rows[5].Text or ""):trim()
+		cfg.Model = trim(rows[2].Text or "")
+		cfg.ApiKey = trim(rows[3].Text or "")
+		cfg.BackendUrl = trim(rows[4].Text or "")
+		cfg.SessionToken = trim(rows[5].Text or "")
 		local iters = tonumber(rows[6].Text)
 		cfg.MaxIterations = math.clamp(iters or 10, 1, 25)
 		hooks.onConfigSaved(cfg)
@@ -316,7 +321,7 @@ function UI.init(dock, hooks)
 		task.spawn(function()
 			-- Http is a child of the RoForge module (UI's parent), not two levels up.
 			local Http = require(script.Parent.Http)
-			local url = (rows[4].Text or ""):trim()
+			local url = trim(rows[4].Text or "")
 			while url:sub(-1) == "/" do
 				url = url:sub(1, -2)
 			end
@@ -334,8 +339,8 @@ function UI.init(dock, hooks)
 		task.spawn(function()
 			local RemoteTools = require(script.Parent.Tools.RemoteTools)
 			local cfg = table.clone(cfg0)
-			cfg.BackendUrl = (rows[4].Text or ""):trim()
-			cfg.SessionToken = (rows[5].Text or ""):trim()
+			cfg.BackendUrl = trim(rows[4].Text or "")
+			cfg.SessionToken = trim(rows[5].Text or "")
 			local defs, err = RemoteTools.refresh(cfg)
 			if err then
 				statusLabel.Text = "Tools: " .. tostring(err)
