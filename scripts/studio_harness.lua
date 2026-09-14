@@ -160,8 +160,9 @@ local STRICT_PROPS = {
 		InitialDockState = true, Resizable = true, ZIndexBehavior = true,
 	},
 	PluginToolbarButton = {
-		Name = true, Label = true, ToolTip = true, Active = true,
-		ClickableWhenOff = true, Visible = true,
+		-- real API: ClickableWhenViewportHidden, Enabled, Icon (+ Instance props)
+		Name = true, ClickableWhenViewportHidden = true,
+		Enabled = true, Icon = true,
 	},
 	PluginToolbar = { Name = true },
 	Frame = FRAME_PROPS,

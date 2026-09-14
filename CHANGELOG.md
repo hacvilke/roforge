@@ -3,6 +3,18 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.16 — 2026-09-14
+
+### Fixed
+- **Toolbar button dead after click (`ClickableWhenOff`)**: that property
+  does not exist on `PluginToolbarButton` — a hallucination on our side.
+  Replaced with the real `ClickableWhenViewportHidden` in both plugins.
+  Because the crash happened before the button's click handler was attached,
+  this is also why the button appeared but did nothing.
+- The smoke-test harness now enforces the **real** `PluginToolbarButton`
+  property set (`ClickableWhenViewportHidden`, `Enabled`, `Icon`), so
+  invented property names can never ship again.
+
 ## 0.3.15 — 2026-09-14
 
 ### Fixed

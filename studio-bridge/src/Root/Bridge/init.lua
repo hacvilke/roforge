@@ -423,7 +423,7 @@ function Bridge.start(plugin)
 		end
 	end
 	if toggle then
-		toggle.ClickableWhenOff = true
+		toggle.ClickableWhenViewportHidden = true
 		toggle:SetActive(true)
 		toggle.Click:Connect(function()
 			local visible = not dock.Visible
