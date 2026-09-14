@@ -1122,10 +1122,11 @@ return Deflate
 -- access, and selection. Bridge-only (the client/ LocalTools copy keeps the
 -- original toolset for the in-Studio chat).
 
-local Viewport = require(script.Viewport)
-local LocalTools = require(script.LocalTools)
-local Pro = require(script.Pro)
-local ProModuleLoader = require(script.ProModuleLoader)
+-- All four are SIBLING modules (children of the Bridge module).
+local Viewport = require(script.Parent.Viewport)
+local LocalTools = require(script.Parent.LocalTools)
+local Pro = require(script.Parent.Pro)
+local ProModuleLoader = require(script.Parent.ProModuleLoader)
 local Selection = game:GetService("Selection")
 
 local ExtraTools = {}
@@ -2306,7 +2307,8 @@ return Http
 
 local Selection = game:GetService("Selection")
 local RunService = game:GetService("RunService")
-local Pro = require(script.Pro)
+-- Pro is a SIBLING module (both children of the Bridge module).
+local Pro = require(script.Parent.Pro)
 
 local LocalTools = {}
 
@@ -2748,9 +2750,10 @@ local PngEncoder = {}
 
 local Deflate
 do
-	-- `script` exists in Roblox; the standalone luau CLI resolves by relative path
+	-- `script` exists in Roblox (Deflate is a SIBLING module, both children
+	-- of the Bridge module); the standalone luau CLI resolves by relative path
 	local ok, mod = pcall(function()
-		return require(script.Deflate)
+		return require(script.Parent.Deflate)
 	end)
 	if ok and mod then
 		Deflate = mod
@@ -3441,8 +3444,9 @@ return ProModuleLoader
 
 local Viewport = {}
 
-local Png = require(script.PngEncoder)
-local Pro = require(script.Pro)
+-- Both are SIBLING modules (children of the Bridge module).
+local Png = require(script.Parent.PngEncoder)
+local Pro = require(script.Parent.Pro)
 
 local MIN_W, MIN_H = 256, 240
 local DEF_W, DEF_H = 1024, 576

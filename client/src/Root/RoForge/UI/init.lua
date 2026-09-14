@@ -313,7 +313,8 @@ function UI.init(dock, hooks)
 	addButton("Test backend", COLORS.Dim, function()
 		statusLabel.Text = "Testing backend…"
 		task.spawn(function()
-			local Http = require(script.Parent.Parent.Http)
+			-- Http is a child of the RoForge module (UI's parent), not two levels up.
+			local Http = require(script.Parent.Http)
 			local url = (rows[4].Text or ""):trim()
 			while url:sub(-1) == "/" do
 				url = url:sub(1, -2)

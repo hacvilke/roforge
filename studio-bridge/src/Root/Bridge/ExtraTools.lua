@@ -2,10 +2,11 @@
 -- access, and selection. Bridge-only (the client/ LocalTools copy keeps the
 -- original toolset for the in-Studio chat).
 
-local Viewport = require(script.Viewport)
-local LocalTools = require(script.LocalTools)
-local Pro = require(script.Pro)
-local ProModuleLoader = require(script.ProModuleLoader)
+-- All four are SIBLING modules (children of the Bridge module).
+local Viewport = require(script.Parent.Viewport)
+local LocalTools = require(script.Parent.LocalTools)
+local Pro = require(script.Parent.Pro)
+local ProModuleLoader = require(script.Parent.ProModuleLoader)
 local Selection = game:GetService("Selection")
 
 local ExtraTools = {}

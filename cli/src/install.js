@@ -53,8 +53,10 @@ export function findPluginSource(name, { packageDir = path.join(here, "..") } = 
 }
 
 // Copy the plugin into the plugins folder. `destDir` overrides the target
-// (tests). Returns { src, dest }.
-export function installPlugin(name, { destDir } = {}) {
+// (tests); `destName` overrides the installed filename (Studio remembers a
+// declined first-run prompt PER FILENAME, so a fresh name re-triggers it).
+// Returns { src, dest }.
+export function installPlugin(name, { destDir, destName } = {}) {
   const meta = PLUGINS[name];
   if (!meta) throw new Error(`unknown plugin: ${name} (expected: ${Object.keys(PLUGINS).join(" | ")})`);
   const src = findPluginSource(name);
@@ -66,7 +68,12 @@ export function installPlugin(name, { destDir } = {}) {
   }
   const dir = destDir || pluginsDir();
   fs.mkdirSync(dir, { recursive: true });
-  const dest = path.join(dir, meta.dest);
+  const destBase = destName
+    ? /\.(rbxm|rbxmx)$/i.test(destName)
+      ? destName
+      : `${destName}.rbxm`
+    : meta.dest;
+  const dest = path.join(dir, destBase);
   fs.copyFileSync(src, dest);
   return { src, dest };
 }

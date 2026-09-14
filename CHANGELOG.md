@@ -3,6 +3,25 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.12 — 2026-09-13
+
+### Fixed
+- **Plugins now actually load in Studio.** Eight `require` calls in the
+  bridge and two in the client referenced sibling modules as if they were
+  children (`require(script.Pro)` from `LocalTools` instead of
+  `require(script.Parent.Pro)`, etc.). Studio errored at load time with
+  "Pro is not a valid member of ModuleScript …" and the plugins never
+  started. All 10 paths fixed and verified against the built tree.
+- New CI gate: `scripts/check_plugin_requires.mjs` resolves every
+  `script.*` require against the real Instance tree and fails the build
+  on any broken level — this bug class can no longer ship.
+
+### Added
+- `roforge install-plugin [bridge|client] --name <file>` — install a
+  plugin under a different filename. Studio remembers a declined
+  first-run prompt per filename, so a fresh name re-triggers the prompt.
+- `install-plugin` help now documents the `client` argument.
+
 ## 0.3.11 — 2026-09-13
 
 ### Changed

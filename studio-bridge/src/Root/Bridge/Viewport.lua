@@ -8,8 +8,9 @@
 
 local Viewport = {}
 
-local Png = require(script.PngEncoder)
-local Pro = require(script.Pro)
+-- Both are SIBLING modules (children of the Bridge module).
+local Png = require(script.Parent.PngEncoder)
+local Pro = require(script.Parent.Pro)
 
 local MIN_W, MIN_H = 256, 240
 local DEF_W, DEF_H = 1024, 576

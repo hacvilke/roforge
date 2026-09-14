@@ -76,6 +76,8 @@ jobs:
           done
           echo "analyze gate done (exit $status)"
           exit $status
+      - name: require-path checker — every script.* require must resolve in the tree
+        run: node scripts/check_plugin_requires.mjs
       - name: rojo build — bridge + client + HQ
         run: |
           ROJO=$(find bin -type f -name rojo | head -1)

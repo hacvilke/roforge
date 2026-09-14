@@ -5,7 +5,8 @@
 -- everything. The model API key is NEVER part of these requests, and chat
 -- content is never sent to the backend.
 
-local Http = require(script.Parent.Http)
+-- Http is a child of the RoForge module (Tools' parent), not of Tools.
+local Http = require(script.Parent.Parent.Http)
 
 local RemoteTools = {}
 

@@ -8,7 +8,8 @@
 
 local Selection = game:GetService("Selection")
 local RunService = game:GetService("RunService")
-local Pro = require(script.Pro)
+-- Pro is a SIBLING module (both children of the Bridge module).
+local Pro = require(script.Parent.Pro)
 
 local LocalTools = {}
 

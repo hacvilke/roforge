@@ -10,9 +10,10 @@ local PngEncoder = {}
 
 local Deflate
 do
-	-- `script` exists in Roblox; the standalone luau CLI resolves by relative path
+	-- `script` exists in Roblox (Deflate is a SIBLING module, both children
+	-- of the Bridge module); the standalone luau CLI resolves by relative path
 	local ok, mod = pcall(function()
-		return require(script.Deflate)
+		return require(script.Parent.Deflate)
 	end)
 	if ok and mod then
 		Deflate = mod

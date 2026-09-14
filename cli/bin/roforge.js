@@ -288,12 +288,12 @@ async function main() {
         console.error(dim("  from a git clone: rojo build -o studio-bridge/dist/RoForgeBridge.rbxm studio-bridge/default.project.json"));
         process.exit(1);
       }
-      const { dest } = installPlugin(which);
+      const { dest } = installPlugin(which, { destName: flags.name });
       console.log(bold("RoForge plugin installed") + dim(" — " + PLUGINS[which].desc + "\n"));
       console.log(`  ${green("✓")} ${src}\n  →  ${dest}\n`);
       console.log(bold("Next:"));
-      console.log("  1. start (or restart) Roblox Studio");
-      console.log("  2. File → Plugins → Manage Plugins — " + which + " is now listed");
+      console.log("  1. start (or restart) Roblox Studio and open a place");
+      console.log("  2. Plugins tab → Manage Plugins — " + which + " is now listed");
       console.log("  3. run `roforge studio` (or the TUI) and paste the printed token into the plugin dock");
       return;
     }
@@ -444,7 +444,8 @@ ${bold("Usage")}
   roforge tools               list all tools
   roforge login --provider <p> store a key (gemini|groq|openrouter|anthropic|openai)
   roforge providers           list providers, keys, and auto-routing order
-  roforge install-plugin      install the RoForge Bridge plugin into Studio
+  roforge install-plugin [bridge|client]   install a plugin into Studio (default: bridge)
+                                          --name <file> installs under a different filename
   roforge pro                 show RoForge Pro license status (needs Studio bridge)
   roforge analyze <file...>   run the official Luau analyzer on files
   roforge config [set k v]    show / set configuration

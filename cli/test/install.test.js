@@ -49,6 +49,19 @@ test("install: installPlugin copies into the target dir", () => {
   }
 });
 
+test("install: destName overrides the installed filename (.rbxm appended)", () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "roforge-install-"));
+  try {
+    const { dest } = installPlugin("bridge", { destDir: tmp, destName: "RoForgeB2" });
+    assert.equal(path.basename(dest), "RoForgeB2.rbxm");
+    assert.ok(fs.existsSync(dest));
+    const { dest: d2 } = installPlugin("client", { destDir: tmp, destName: "RoForgeC2.rbxm" });
+    assert.equal(path.basename(d2), "RoForgeC2.rbxm", "explicit extension kept");
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("install: unknown plugin name throws", () => {
   assert.throws(() => installPlugin("wheels"), /unknown plugin/);
 });
