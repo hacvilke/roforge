@@ -3,6 +3,30 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.18 — 2026-09-14
+
+### Fixed
+- **`Save & connect` / `Save settings` crashed (`string.trim`)**: Luau has
+  no `string.trim` — both plugins now use a local `trim()` helper. This was
+  why pasting the bridge token did nothing (the save handler died before
+  storing it, so the CLI kept rejecting the empty token with HTTP 401) and
+  why the client chat stayed dead after entering an API key.
+- **Bridge status now shows the real reason when not connected**:
+  network errors, `HTTP 401 — token mismatch`, and an explicit
+  "enable Game Settings > Security > Allow HTTP Requests" hint (the
+  loopback HTTP the bridge uses is blocked by Studio until that place
+  setting is on).
+
+### Improved
+- Bridge dock hint text: what to paste, that the Pro id fields stay blank
+  unless you published the RoForge Pro pass, and the HTTP-requests
+  setting.
+
+### CI
+- New static checker (`check_luau_api.mjs`) fails the build on string
+  methods that don't exist in Luau (`trim`, `split`, `startsWith`, ...) —
+  the "hallucinated JS method" bug class is now guarded.
+
 ## 0.3.17 — 2026-09-14
 
 ### Fixed
