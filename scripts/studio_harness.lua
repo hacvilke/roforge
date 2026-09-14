@@ -156,8 +156,8 @@ local TEXT_PROPS = {
 }
 local STRICT_PROPS = {
 	DockWidgetPluginGui = {
-		Name = true, Title = true, Enabled = true, Visible = true,
-		InitialDockState = true, Resizable = true, ZIndexBehavior = true,
+		-- real API: Title, Enabled (show/hide), InitialDockState — NO Visible prop
+		Name = true, Title = true, Enabled = true, InitialDockState = true,
 	},
 	PluginToolbarButton = {
 		-- real API: ClickableWhenViewportHidden, Enabled, Icon (+ Instance props)
@@ -397,7 +397,6 @@ function pluginT:CreateDockWidgetPluginGui(id, info)
 	local gui = makeInstance("DockWidgetPluginGui", id)
 	dockGuis[id] = gui
 	rawset(gui._props, "Enabled", true)
-	rawset(gui._props, "Visible", true)
 	return gui
 end
 function pluginT:CreateToolbar(name)

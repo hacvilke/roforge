@@ -3,6 +3,15 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.17 — 2026-09-14
+
+### Fixed
+- **Toolbar button click crashed (`Visible` on dock)**:
+  `DockWidgetPluginGui` has no `Visible` property — show/hide is controlled
+  by `Enabled`. The toggle handlers in both plugins now use `Enabled` only.
+  (Plugins already started and printed their ready lines; only the
+  button-click handler was affected.)
+
 ## 0.3.16 — 2026-09-14
 
 ### Fixed
