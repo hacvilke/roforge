@@ -11,7 +11,10 @@ end
 
 local RoForge = require(script:WaitForChild("RoForge"))
 
-local ok, err = pcall(RoForge.start, plugin)
+local ok, err = xpcall(RoForge.start, function(e)
+	-- capture the throw-site stack so failures in Output point at the exact line
+	return tostring(e) .. "\n" .. debug.traceback("", 2)
+end, plugin)
 if not ok then
 	warn("[RoForge] failed to start: " .. tostring(err))
 end

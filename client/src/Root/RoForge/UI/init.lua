@@ -107,10 +107,10 @@ function UI.init(dock, hooks)
 		})
 		mk("UICorner", { CornerRadius = UDim.new(0, 8), Parent = bubble })
 		mk("UIPadding", {
-			PadTop = UDim.new(0, 5),
-			PadBottom = UDim.new(0, 5),
-			PadLeft = UDim.new(0, 8),
-			PadRight = UDim.new(0, 8),
+			PaddingTop = UDim.new(0, 5),
+			PaddingBottom = UDim.new(0, 5),
+			PaddingLeft = UDim.new(0, 8),
+			PaddingRight = UDim.new(0, 8),
 			Parent = bubble,
 		})
 		local label = mk("TextLabel", {

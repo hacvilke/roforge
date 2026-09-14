@@ -11,7 +11,10 @@ end
 
 local Bridge = require(script:WaitForChild("Bridge"))
 
-local ok, err = pcall(Bridge.start, plugin)
+local ok, err = xpcall(Bridge.start, function(e)
+	-- capture the throw-site stack so failures in Output point at the exact line
+	return tostring(e) .. "\n" .. debug.traceback("", 2)
+end, plugin)
 if not ok then
 	warn("[RoForge Bridge] failed to start: " .. tostring(err))
 end

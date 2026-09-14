@@ -264,10 +264,10 @@ function Bridge.start(plugin)
 		Parent = root,
 	})
 	mk("UIPadding", {
-		PadTop = UDim.new(0, 8),
-		PadBottom = UDim.new(0, 8),
-		PadLeft = UDim.new(0, 8),
-		PadRight = UDim.new(0, 8),
+		PaddingTop = UDim.new(0, 8),
+		PaddingBottom = UDim.new(0, 8),
+		PaddingLeft = UDim.new(0, 8),
+		PaddingRight = UDim.new(0, 8),
 		Parent = root,
 	})
 
@@ -399,7 +399,7 @@ function Bridge.start(plugin)
 	end)
 
 	-- toolbar
-	local toolbar = plugin:CreateToolbar("RoForge")
+	local toolbar = plugin:CreateToolbar("RoForge Bridge")
 	local toggle = toolbar:CreateButton("Bridge", "Open or close the RoForge Bridge status")
 	toggle.ClickableWhenOff = true
 	toggle:SetActive(true)

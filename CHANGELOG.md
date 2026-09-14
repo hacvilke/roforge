@@ -3,6 +3,20 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.14 — 2026-09-14
+
+### Fixed
+- **Plugin startup crash on `UIPadding`**: we set `PadTop/PadBottom/...`,
+  but the real property names are `PaddingTop/PaddingBottom/...`. Fixed in
+  both plugins; the smoke tests now reject unknown property names per class.
+- **Toolbar name collision**: both plugins created a toolbar named
+  "RoForge". The bridge's toolbar is now "RoForge Bridge".
+
+### Improved
+- Plugin startup failures now include the **exact file and line** in the
+  Output warning (xpcall + debug.traceback), so any remaining startup issue
+  is diagnosable in one log paste.
+
 ## 0.3.13 — 2026-09-14
 
 ### Fixed

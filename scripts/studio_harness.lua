@@ -29,50 +29,50 @@ end
 local C3 = {}
 function C3.fromRGB(r, g, b)
 	checkNums({ r, g, b }, 3)
-	return { r = r / 255, g = g / 255, b = b / 255 }
+	return { _t = "Color3", r = r / 255, g = g / 255, b = b / 255 }
 end
 function C3.new(r, g, b)
 	checkNums({ r, g, b }, 3)
-	return { r = r, g = g, b = b }
+	return { _t = "Color3", r = r, g = g, b = b }
 end
 
 local UDimT = {}
 function UDimT.new(scale, offset)
 	checkNums({ scale, offset }, 2)
-	return { s = scale, o = offset }
+	return { _t = "UDim", s = scale, o = offset }
 end
 function UDimT.fromScale(s)
 	if s == nil then missingArg(1) end
-	return { s = s, o = 0 }
+	return { _t = "UDim", s = s, o = 0 }
 end
 function UDimT.fromOffset(o)
 	if o == nil then missingArg(1) end
-	return { s = 0, o = o }
+	return { _t = "UDim", s = 0, o = o }
 end
 
 local UDim2T = {}
 function UDim2T.new(sx, ox, sy, oy)
 	checkNums({ sx, ox, sy, oy }, 4)
-	return { sx = sx, ox = ox, sy = sy, oy = oy }
+	return { _t = "UDim2", sx = sx, ox = ox, sy = sy, oy = oy }
 end
 function UDim2T.fromScale(x, y)
 	checkNums({ x, y }, 2)
-	return { sx = x, ox = 0, sy = y, oy = 0 }
+	return { _t = "UDim2", sx = x, ox = 0, sy = y, oy = 0 }
 end
 function UDim2T.fromOffset(x, y)
 	checkNums({ x, y }, 2)
-	return { sx = 0, ox = x, sy = 0, oy = y }
+	return { _t = "UDim2", sx = 0, ox = x, sy = 0, oy = y }
 end
 
 local V2T = {}
 function V2T.new(x, y)
 	checkNums({ x, y }, 2)
-	return { x = x, y = y }
+	return { _t = "Vector2", x = x, y = y }
 end
 local V3T = {}
 function V3T.new(x, y, z)
 	checkNums({ x, y, z }, 3)
-	return { x = x, y = y, z = z }
+	return { _t = "Vector3", x = x, y = y, z = z }
 end
 local CFT = {}
 function CFT.new(...)
@@ -130,8 +130,30 @@ end
 
 -- -------------------------------------------------------------- instances ---
 
--- Strict property whitelist: these classes caused real bugs when given props
--- that do not exist on them. Everything else is permissive.
+-- Strict per-class property whitelists (Studio rejects unknown props with
+-- "<prop> is not a valid member of <class>"). Classes the plugins don't use
+-- stay permissive.
+local function mergeProps(...)
+	local out = {}
+	for _, tbl in ipairs({...}) do
+		for k, v in pairs(tbl) do
+			out[k] = v
+		end
+	end
+	return out
+end
+
+local FRAME_PROPS = {
+	Name = true, BackgroundColor3 = true, BackgroundTransparency = true,
+	BorderSizePixel = true, BorderColor3 = true, Size = true, Position = true,
+	Visible = true, LayoutOrder = true, AutomaticSize = true, ZIndex = true,
+}
+local TEXT_PROPS = {
+	Text = true, TextColor3 = true, TextSize = true, Font = true,
+	TextWrapped = true, TextXAlignment = true, TextYAlignment = true,
+	TextTruncate = true, RichText = true, PlaceholderText = true,
+	PlaceholderColor3 = true,
+}
 local STRICT_PROPS = {
 	DockWidgetPluginGui = {
 		Name = true, Title = true, Enabled = true, Visible = true,
@@ -141,18 +163,58 @@ local STRICT_PROPS = {
 		Name = true, Label = true, ToolTip = true, Active = true,
 		ClickableWhenOff = true, Visible = true,
 	},
-	PluginToolbar = {
-		Name = true,
+	PluginToolbar = { Name = true },
+	Frame = FRAME_PROPS,
+	ScrollingFrame = mergeProps(FRAME_PROPS, {
+		CanvasSize = true, CanvasPosition = true, AutomaticCanvasSize = true,
+		ScrollingDirection = true, ScrollBarThickness = true,
+	}),
+	TextLabel = mergeProps(FRAME_PROPS, TEXT_PROPS),
+	TextBox = mergeProps(FRAME_PROPS, TEXT_PROPS, {
+		ClearTextOnFocus = true, MultiLine = true, BorderMode = true,
+	}),
+	TextButton = mergeProps(FRAME_PROPS, TEXT_PROPS, {
+		Active = true, ButtonSize = true,
+	}),
+	UICorner = { Name = true, CornerRadius = true },
+	UIPadding = {
+		Name = true, PaddingTop = true, PaddingBottom = true,
+		PaddingLeft = true, PaddingRight = true,
 	},
+	UIListLayout = {
+		Name = true, Padding = true, SortOrder = true, FillDirection = true,
+		VerticalAlignment = true, HorizontalAlignment = true,
+	},
+}
+
+-- property TYPE checks (Studio rejects wrong-typed values)
+local PROP_TYPES = {
+	Size = "UDim2", Position = "UDim2", CanvasSize = "UDim2",
+	CanvasPosition = "Vector2",
+	Padding = "UDim", CornerRadius = "UDim",
+	PaddingTop = "UDim", PaddingBottom = "UDim",
+	PaddingLeft = "UDim", PaddingRight = "UDim",
+	BackgroundColor3 = "Color3", BorderColor3 = "Color3",
+	TextColor3 = "Color3", PlaceholderColor3 = "Color3",
 }
 
 local KNOWN_EVENTS = {
 	Click = true, Click2 = true, MouseButton1Click = true, FocusLost = true,
-	Activated = true, Changed = true, ChildAdded = true, ChildRemoved = true,
-	LayoutOrderChanged = true,
+	Activated = true, Deactivated = true, Changed = true, ChildAdded = true,
+	ChildRemoved = true, LayoutOrderChanged = true, TextChanged = true,
 }
 
-local created = {}
+local function describeType(v)
+	if type(v) == "table" then
+		local t = rawget(v, "_t")
+		if t then
+			return t
+		end
+	end
+	return type(v)
+end
+
+local created = {}local created = {}
 local dockGuis = {}
 
 local function makeInstance(class, name)
@@ -235,6 +297,13 @@ local function makeInstance(class, name)
 			end
 			if STRICT_PROPS[class] and not STRICT_PROPS[class][k] then
 				error(string.format('%s is not a valid member of %s "%s"', k, class, t.Name), 0)
+			end
+			local expected = PROP_TYPES[k]
+			if expected and describeType(v) ~= expected then
+				if expected == "UDim" then
+					error(string.format('Unable to cast %s to UDim', describeType(v)), 0)
+				end
+				error(string.format('Expected %s, got %s', expected, describeType(v)), 0)
 			end
 			rawset(t._props, k, v)
 		end,
