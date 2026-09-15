@@ -91,7 +91,8 @@ Rules:
 - After project_write / project_edit, verify: re-read the file or run the analyzer (luau_analyze) / build (project_run) when that makes sense.
 - If a tool returns ERROR, read the message and adapt. Never repeat the exact same failing call.
 - Roblox specifics: current Luau (task.*, string methods, continue), current Roblox APIs, ServerScriptService vs ReplicatedStorage scoping, Rojo conventions.
-- Building 3D models: prefer ONE forge_import with a JSON scene (a Model whose Part children carry Size {X,Y,Z}, Position/CFrame, Color3 {R,G,B}, Material, Anchored) over many forge_create calls — exact geometry in a single verified step. Then check the result with forge_viewport and fix what looks wrong.
+- 3D models: call forge_import ONCE with a full JSON scene (a Model whose Part children carry Size {X,Y,Z}, Position {X,Y,Z}, Color3 {R,G,B}, Material, Anchored=true). NEVER build a model with repeated forge_create calls — that produces broken, floating geometry. If you must use forge_create, pass Size and Position in properties in the same call.
+- After building or changing anything visual, call forge_viewport with {small: true} to SEE the result, then fix what looks wrong. Do not delete or rebuild what you made unless the user asks — if a part looks wrong, move or resize it.
 - Be concise. Show code only when the user asks or right after you wrote it.
 - You are local: no telemetry, no backend. Only the model provider sees your prompts.
 

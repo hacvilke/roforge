@@ -53,6 +53,8 @@ const steps = [
   { tool: "forge_screenshot", args: { name: "test" }, expect: "Screenshot saved to the RoForge plugin storage folder" },
   // viewport capture returns a base64 image table
   { tool: "forge_viewport", args: {}, expectTableWith: { field: "imageBase64", minLen: 64 } },
+  // small vision-check capture (what the model uses to see its own work)
+  { tool: "forge_viewport", args: { small: true }, expectTableWith: { field: "imageBase64", minLen: 64 } },
   // native change-history integration (SetChangePoint / ChangeHistoryIndex)
   { tool: "forge_checkpoint", args: { name: "cp1" }, expect: "checkpoint 'cp1' set" },
   { tool: "forge_checkpoints", args: {}, expect: "cp1" },
@@ -61,7 +63,7 @@ const steps = [
   { tool: "forge_diff", args: { name: "snap1" }, expect: "diff vs snapshot 'snap1'" },
   { tool: "forge_export", args: { path: "Workspace.RoForgeHouse" }, expect: "RoForgeHouse" },
   // table-form properties ({x=,y=,z=}) must be coerced to Vector3
-  { tool: "forge_create", args: { parent_path: "Workspace.RoForgeHouse", class_name: "Part", name: "Lamp", properties: { Size: { x: 5, y: 5, z: 5 } } }, expect: "set Size" },
+  { tool: "forge_create", args: { parent_path: "Workspace.RoForgeHouse", class_name: "Part", name: "Lamp", properties: { Size: { x: 5, y: 5, z: 5 } } }, expect: "Size = " },
   // abstract classes must be rejected like real Roblox does
   { tool: "forge_create", args: { parent_path: "Workspace", class_name: "BasePart", name: "Bad" }, expectError: "Invalid class name" },
   { tool: "forge_create", args: { parent_path: "Workspace", class_name: "TotallyBogus", name: "Bad" }, expectError: "Invalid class name" },

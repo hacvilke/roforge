@@ -273,6 +273,37 @@ local function forgeWrite(args)
 	return ("Wrote %d chars of %s to %s"):format(#args.source, inst.ClassName, inst:GetFullName())
 end
 
+-- Human-readable value for tool output (real Studio userdata via
+-- ToHumanReadableString; harness tagged tables via their _t tag).
+local function describeValue(v)
+	local t = type(v)
+	if t == "string" then
+		return v
+	end
+	if t == "number" or t == "boolean" then
+		return tostring(v)
+	end
+	if t == "table" then
+		local tag = rawget(v, "_t")
+		if tag == "Vector3" then
+			return ("%.3g, %.3g, %.3g"):format(v.x, v.y, v.z)
+		end
+		if tag == "Vector2" then
+			return ("%.3g, %.3g"):format(v.x, v.y)
+		end
+		if tag == "Color3" then
+			return ("%.3g, %.3g, %.3g"):format(v.r, v.g, v.b)
+		end
+	end
+	local okHR, hr = pcall(function()
+		return v:ToHumanReadableString()
+	end)
+	if okHR and type(hr) == "string" then
+		return hr
+	end
+	return tostring(v)
+end
+
 local function forgeCreate(args)
 	local parent, err = resolvePath(args.parent_path)
 	if not parent then
@@ -297,7 +328,10 @@ local function forgeCreate(args)
 				inst[propName] = coerceValue(propVal)
 			end)
 			if okSet then
-				table.insert(setLines, "  set " .. propName)
+				local okGet, after = pcall(function()
+					return describeValue(inst[propName])
+				end)
+				table.insert(setLines, ("  %s = %s"):format(propName, okGet and after or "set"))
 			else
 				table.insert(setLines, "  FAILED " .. propName .. ": " .. tostring(setErr))
 			end

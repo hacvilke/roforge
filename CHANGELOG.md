@@ -3,6 +3,22 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.21 — 2026-09-15
+
+### Improved
+- **`forge_create` now reports the values it actually applied**
+  (`Size = 5, 5, 5` instead of a bare `set Size`), so the model sees
+  ground truth after every create and stops guessing whether properties
+  landed. Failed properties still show the exact Roblox error.
+- **`forge_viewport` gains `{small: true}`**: a compact 320×180 capture
+  sized for a free-tier model's context window — this is what the model
+  uses to see its own work.
+- **System prompt (blunter, for weaker models)**: build models with ONE
+  `forge_import` JSON scene, never repeated `forge_create` calls; always
+  pass `Size`/`Position` in the same call as `forge_create`; look at the
+  result with `forge_viewport({small: true})` and fix in place instead of
+  deleting and rebuilding.
+
 ## 0.3.20 — 2026-09-15
 
 ### Fixed

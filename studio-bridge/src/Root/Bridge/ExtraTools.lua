@@ -826,8 +826,9 @@ local TOOLS = {
 		input_schema = {
 			type = "object",
 			properties = {
-				width = { type = "integer", description = "256-1280. Default 1024." },
-				height = { type = "integer", description = "240-720. Default 576." },
+				width = { type = "integer", description = "256-1280. Default 1024. Ignored when small=true." },
+				height = { type = "integer", description = "240-720. Default 576. Ignored when small=true." },
+				small = { type = "boolean", description = "Compact 320x180 capture for the model's own vision check. Use this after building or changing the scene." },
 			},
 			additionalProperties = false,
 		},

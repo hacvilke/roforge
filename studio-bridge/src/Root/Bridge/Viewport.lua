@@ -158,14 +158,21 @@ end
 -- on total failure (Bridge normalizes both shapes before posting).
 function Viewport.capture(args)
 	args = type(args) == "table" and args or {}
-	local w = clampDim(args.width, MIN_W, maxW(), DEF_W)
-	local h = clampDim(args.height, MIN_H, maxH(), DEF_H)
+	local w, h
+	if args.small == true then
+		-- compact capture for the model's own vision check: small enough to fit
+		-- a free-tier context window, big enough to judge layout
+		w, h = 320, 180
+	else
+		w = clampDim(args.width, MIN_W, maxW(), DEF_W)
+		h = clampDim(args.height, MIN_H, maxH(), DEF_H)
+	end
 	local failures = {}
 
 	local okA, b64A, whyA = pcall(tryRenderSurfaceTexture, w, h)
 	if okA and b64A then
 		return {
-			text = ("Viewport captured at %dx%d (RenderSurfaceTexture)."):format(w, h),
+			text = ("Viewport captured at %dx%d (RenderSurfaceTexture%s)."):format(w, h, args.small and ", small" or ""),
 			imageBase64 = b64A,
 			mediaType = "image/png",
 		}
@@ -175,7 +182,7 @@ function Viewport.capture(args)
 	local okB, b64B, whyB = pcall(tryStudioCapture, w, h)
 	if okB and b64B then
 		return {
-			text = ("Viewport captured at %dx%d (CaptureScreenshot)."):format(w, h),
+			text = ("Viewport captured at %dx%d (CaptureScreenshot%s)."):format(w, h, args.small and ", small" or ""),
 			imageBase64 = b64B,
 			mediaType = "image/png",
 		}
