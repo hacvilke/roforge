@@ -52,6 +52,23 @@ export function findPluginSource(name, { packageDir = path.join(here, "..") } = 
   return null;
 }
 
+// Other RoForge*.rbxm files already in the plugins folder (excluding the
+// file we just installed). Studio loads EVERY plugin file in the folder, so
+// a stale RoForge2.rbxm next to RoForgeBridge.rbxm means two plugin
+// instances running at once — duplicate docks and tools flapping between
+// versions. Returns the offending filenames.
+export function stalePluginFiles(destDir, installedName, env = process.env) {
+  const dir = destDir || pluginsDir(env);
+  try {
+    return fs
+      .readdirSync(dir)
+      .filter((f) => /^RoForge.*\.(rbxm|rbxmx)$/i.test(f) && f !== installedName)
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
 // Copy the plugin into the plugins folder. `destDir` overrides the target
 // (tests); `destName` overrides the installed filename (Studio remembers a
 // declined first-run prompt PER FILENAME, so a fresh name re-triggers it).

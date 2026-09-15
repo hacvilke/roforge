@@ -3,6 +3,47 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.20 — 2026-09-15
+
+### Fixed
+- **Demo house imported 0 of 12 parts**: `house.json` used the abstract
+  class `BasePart`, which `Instance.new` rejects in real Studio. All parts
+  are now `Part` with correct geometry (sits flush on the baseplate,
+  gabled slate roof, door, windows, chimney).
+- **`forge_game_info` used `game.ServerName`, which does not exist** on
+  DataModel in current Studio. It now reports `game.Name` (the place
+  name) instead.
+- **Duplicate plugin installs**: `install-plugin` and `demo` now warn when
+  other `RoForge*.rbxm` files are still in the Studio plugins folder
+  (Studio loads every file there, so two versions run at once and jobs
+  flap between them).
+- **Harness fidelity** (test infra): `Instance.new` now rejects
+  non-creatable/unknown classes exactly like Studio (`Invalid class
+  name: …`); renaming an instance updates the parent's child map;
+  `Size`/`Position`/`CanvasSize` are no longer force-typed as UDim2 for
+  every class (they're Vector3 on parts); `workspace` has a
+  `CurrentCamera`; `DataModel` no longer fakes a `ServerName` member.
+
+### Added
+- **Vector/value coercion in `forge_set_property` and `forge_create`**
+  (bridge + client): the model can now pass `"20, 1, 20"`,
+  `"{20,1,20}"`, or `{x=20,y=1,z=20}` and get a real `Vector3` — plus
+  `UDim2` (`"sx, ox, sy, oy"`), `Color3` (`"r, g, b"` or `{R,G,B}`,
+  0-1 or 0-255) and `CFrame` (`"x y z"` / 12-number) strings. This is
+  what lets the agent actually build sized, positioned models instead of
+  getting "Vector3 expected, got string".
+- **`forge_screenshot` camera fallback** (bridge): when
+  `StudioCaptureService` is unavailable or not permitted, the screenshot
+  is rendered from `workspace.CurrentCamera` into an offscreen
+  `RenderSurfaceTexture` and encoded to PNG — so screenshots work even
+  without the Studio screenshot permission. Errors now say which path
+  failed and why.
+- **Tool battery expanded**: vector coercion, table-form properties,
+  abstract-class rejection, and `Place name: Place1` assertions — 28
+  bridge / 12 client calls.
+- **System prompt**: model-building rule — build models with one
+  `forge_import` JSON scene, then verify with `forge_viewport`.
+
 ## 0.3.19 — 2026-09-14
 
 ### Fixed

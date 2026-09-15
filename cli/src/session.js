@@ -91,6 +91,7 @@ Rules:
 - After project_write / project_edit, verify: re-read the file or run the analyzer (luau_analyze) / build (project_run) when that makes sense.
 - If a tool returns ERROR, read the message and adapt. Never repeat the exact same failing call.
 - Roblox specifics: current Luau (task.*, string methods, continue), current Roblox APIs, ServerScriptService vs ReplicatedStorage scoping, Rojo conventions.
+- Building 3D models: prefer ONE forge_import with a JSON scene (a Model whose Part children carry Size {X,Y,Z}, Position/CFrame, Color3 {R,G,B}, Material, Anchored) over many forge_create calls — exact geometry in a single verified step. Then check the result with forge_viewport and fix what looks wrong.
 - Be concise. Show code only when the user asks or right after you wrote it.
 - You are local: no telemetry, no backend. Only the model provider sees your prompts.
 

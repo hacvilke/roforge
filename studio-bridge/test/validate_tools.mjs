@@ -29,7 +29,7 @@ const house = JSON.parse(readFileSync(path.join(repoRoot, "cli", "src", "demo", 
 
 const steps = [
   // core info (turn-34: used the nonexistent RunService.IsPaused)
-  { tool: "forge_game_info", args: {}, expect: "Place ID" },
+  { tool: "forge_game_info", args: {}, expect: "Place name: Place1" },
   // tree with lowercase AND uppercase root (turn-34: "unknown root 'workspace'")
   { tool: "forge_tree", args: { root: "workspace", max_depth: 1 }, expect: "Workspace" },
   { tool: "forge_tree", args: { root: "Workspace", max_depth: 1 }, expect: "Workspace" },
@@ -42,6 +42,8 @@ const steps = [
   { tool: "forge_read", args: { path: "Workspace.RoForgeHouse" }, expect: "RoForgeHouse" },
   { tool: "forge_get_property", args: { path: "Workspace.RoForgeHouse.Floor", property: "Name" }, expect: "Floor" },
   { tool: "forge_set_property", args: { path: "Workspace.RoForgeHouse.Floor", property: "Name", value: "FloorSlab" }, expect: "FloorSlab" },
+  // vector coercion: the model passes "20, 1, 20" as a string — must land as a real Vector3
+  { tool: "forge_set_property", args: { path: "Workspace.RoForgeHouse.FloorSlab", property: "Size", value: "20, 1, 20" }, expect: "Set 'Size' on" },
   { tool: "forge_set_attribute", args: { path: "Workspace.RoForgeHouse", name: "RoForge", value: "true" }, expect: "RoForge" },
   { tool: "forge_get_attributes", args: { path: "Workspace.RoForgeHouse" }, expect: "RoForge" },
   { tool: "forge_select", args: { paths: ["Workspace.RoForgeHouse"] }, expect: "RoForgeHouse" },
@@ -58,7 +60,11 @@ const steps = [
   { tool: "forge_snapshot", args: { name: "snap1" }, expect: "snapshot 'snap1' captured" },
   { tool: "forge_diff", args: { name: "snap1" }, expect: "diff vs snapshot 'snap1'" },
   { tool: "forge_export", args: { path: "Workspace.RoForgeHouse" }, expect: "RoForgeHouse" },
-  { tool: "forge_create", args: { parent_path: "Workspace.RoForgeHouse", class_name: "Part", name: "Lamp" }, expect: "Created Part at" },
+  // table-form properties ({x=,y=,z=}) must be coerced to Vector3
+  { tool: "forge_create", args: { parent_path: "Workspace.RoForgeHouse", class_name: "Part", name: "Lamp", properties: { Size: { x: 5, y: 5, z: 5 } } }, expect: "set Size" },
+  // abstract classes must be rejected like real Roblox does
+  { tool: "forge_create", args: { parent_path: "Workspace", class_name: "BasePart", name: "Bad" }, expectError: "Invalid class name" },
+  { tool: "forge_create", args: { parent_path: "Workspace", class_name: "TotallyBogus", name: "Bad" }, expectError: "Invalid class name" },
   { tool: "forge_write", args: { path: "Workspace.RoForgeHouse.Main", source: "print('roforge')" }, expect: "Wrote" },
   { tool: "forge_read", args: { path: "Workspace.RoForgeHouse.Main" }, expect: "roforge" },
   { tool: "forge_run", args: { code: "return 40 + 2" }, expect: "returned: 42" },

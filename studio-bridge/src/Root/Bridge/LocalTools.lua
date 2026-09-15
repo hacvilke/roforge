@@ -10,6 +10,7 @@ local Selection = game:GetService("Selection")
 local RunService = game:GetService("RunService")
 -- Pro is a SIBLING module (both children of the Bridge module).
 local Pro = require(script.Parent.Pro)
+local Png = require(script.Parent.PngEncoder)
 
 local LocalTools = {}
 
@@ -36,6 +37,68 @@ do
 	for _, inst in ipairs(roots) do
 		ROOT_NAMES[inst.Name:lower()] = inst
 	end
+end
+
+-- Coerces model-supplied values (JSON: strings / tables) into what Roblox
+-- property setters accept: numbers, booleans, Vector3 / UDim2 / Color3 /
+-- CFrame from "x, y, z" strings or {x=,y=,z=}-style tables.
+local function coerceValue(v)
+	if type(v) == "string" then
+		local n = tonumber(v)
+		if n then
+			return n
+		end
+		if v == "true" then
+			return true
+		end
+		if v == "false" then
+			return false
+		end
+		local t = v:gsub("^%s*", ""):gsub("%s*$", "")
+		if t:sub(1, 1) == "{" then
+			t = t:sub(2):gsub("}$", "")
+		end
+		local num = "[%d%.%-%e]+"
+		local sep = "%s*,%s*"
+		local x, y, z = t:match("^(" .. num .. ")" .. sep .. "(" .. num .. ")" .. sep .. "(" .. num .. ")$")
+		if x then
+			return Vector3.new(tonumber(x), tonumber(y), tonumber(z))
+		end
+		local a, b, c, d = t:match("^(" .. num .. ")" .. sep .. "(" .. num .. ")" .. sep .. "(" .. num .. ")" .. sep .. "(" .. num .. ")$")
+		if a then
+			return UDim2.new(tonumber(a), tonumber(b), tonumber(c), tonumber(d))
+		end
+		if t:find(" ", 1, true) and t:match("^%d") then
+			local ok, cf = pcall(CFrame.new, t)
+			if ok then
+				return cf
+			end
+		end
+	end
+	if type(v) == "table" then
+		local pick = function(l, u)
+			if v[l] ~= nil then
+				return v[l]
+			end
+			return v[u]
+		end
+		if pick("x", "X") ~= nil or pick("y", "Y") ~= nil or pick("z", "Z") ~= nil then
+			return Vector3.new(tonumber(pick("x", "X")) or 0, tonumber(pick("y", "Y")) or 0, tonumber(pick("z", "Z")) or 0)
+		end
+		local r = pick("R", "r")
+		local g = pick("G", "g")
+		local b = pick("B", "b")
+		if r ~= nil or g ~= nil or b ~= nil then
+			r, g, b = tonumber(r) or 0, tonumber(g) or 0, tonumber(b) or 0
+			local scale = (r > 1 or g > 1 or b > 1) and 1 or 255
+			return Color3.fromRGB(math.floor(r * scale + 0.5), math.floor(g * scale + 0.5), math.floor(b * scale + 0.5))
+		end
+		if pick("ScaleX", "sx") ~= nil or pick("OffsetX", "ox") ~= nil then
+			return UDim2.new(tonumber(pick("ScaleX", "sx")) or 0, tonumber(pick("OffsetX", "ox")) or 0,
+				tonumber(pick("ScaleY", "sy")) or 0, tonumber(pick("OffsetY", "oy")) or 0)
+		end
+	end
+	return v
 end
 
 local function splitPath(pathStr)
@@ -231,7 +294,7 @@ local function forgeCreate(args)
 		local setLines = {}
 		for propName, propVal in pairs(props) do
 			local okSet, setErr = pcall(function()
-				inst[propName] = propVal
+				inst[propName] = coerceValue(propVal)
 			end)
 			if okSet then
 				table.insert(setLines, "  set " .. propName)
@@ -356,32 +419,78 @@ local function studioCaptureBytes(w, h)
 	return bytes
 end
 
+-- Render workspace.CurrentCamera to an offscreen surface. Returns PNG bytes
+-- or nil + reason. This is the screenshot fallback for builds where
+-- StudioCaptureService is unavailable or not permitted.
+local function cameraScreenshot(w, h)
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return nil, "no current camera"
+	end
+	local holder = Instance.new("Folder")
+	holder.Name = "RoForgeCapture"
+	holder.Parent = game:GetService("Lighting")
+	local rts = Instance.new("RenderSurfaceTexture")
+	rts.Name = "View"
+	rts.Width = w
+	rts.Height = h
+	rts.CanvasSize = Vector2.new(w, h)
+	rts.Face = Enum.NormalId.Front
+	rts.Parent = holder
+	rts.CameraSubject = camera
+	pcall(function()
+		rts.FocusMode = Enum.CameraFocusMode.Locks
+	end)
+	task.wait(0.6) -- let the texture render at least one frame
+	local okRead, pixels = pcall(function()
+		return rts.Image:Read()
+	end)
+	holder:Destroy()
+	if not okRead or type(pixels) ~= "string" then
+		return nil, "camera render read failed"
+	end
+	if #pixels ~= w * h * 4 and #pixels ~= w * h * 3 then
+		return nil, ("unexpected pixel byte length %d"):format(#pixels)
+	end
+	if #pixels == w * h * 3 then
+		pixels = Png.rgbToRgba(pixels)
+	end
+	local okEnc, png = pcall(Png.encode, w, h, pixels)
+	if not okEnc or type(png) ~= "string" then
+		return nil, "PNG encode failed"
+	end
+	return png
+end
+
 local function forgeScreenshot(args)
 	local name = tostring(args.name or ("roforge_" .. tostring(os.time()))):gsub("[^%w%-_]", "_")
 	local w = tonumber(args.width) or 1280
 	local h = tonumber(args.height) or 720
-	local bytes, capErr = studioCaptureBytes(w, h)
-	if bytes and bytes:sub(1, 8) == PNG_SIG then
+	local tail = " To make the model actually SEE the viewport, use forge_viewport instead."
+	local function saveBytes(imgBytes)
 		local okW = pcall(function()
-			plugin:WriteFile("Screenshots/" .. name .. ".png", bytes)
+			plugin:WriteFile("Screenshots/" .. name .. ".png", imgBytes)
 		end)
-		if okW then
-			return ("Screenshot saved to the RoForge plugin storage folder (Screenshots/%s.png) — open it via Manage Plugins → the RoForge plugin → folder icon.")
-				:format(name)
-				.. " To make the model actually SEE the viewport, use forge_viewport instead."
-		end
+		return okW
+	end
+	local bytes, capErr = studioCaptureBytes(w, h)
+	if bytes and bytes:sub(1, 8) == PNG_SIG and saveBytes(bytes) then
+		return ("Screenshot saved to the RoForge plugin storage folder (Screenshots/%s.png) — open it via Manage Plugins → the RoForge plugin → folder icon."):format(name) .. tail
+	end
+	if bytes and bytes:sub(1, 8) == PNG_SIG then
 		return "ERROR: screenshot captured but could not be saved to plugin storage"
 	end
-	-- Legacy builds (before StudioCaptureService): DataModel:Screenshot wrote
-	-- straight to a system folder
-	local okOld = pcall(function()
-		game:Screenshot(w, h, name, Enum.Folder.Desktop)
-	end)
-	if okOld then
-		return ("Screenshot saved as '%s.png' on your Desktop (legacy Studio build)."):format(name)
-			.. " To make the model actually SEE the viewport, use forge_viewport instead."
+	-- Fallback: render the current camera (works even when
+	-- StudioCaptureService is unavailable or not permitted).
+	local camBytes, camErr = cameraScreenshot(w, h)
+	if camBytes and camBytes:sub(1, 8) == PNG_SIG and saveBytes(camBytes) then
+		return ("Screenshot saved to the RoForge plugin storage folder (Screenshots/%s.png) via camera render — open it via Manage Plugins → the RoForge plugin → folder icon."):format(name) .. tail
 	end
-	return "ERROR: screenshot failed: " .. tostring(capErr or "unknown error")
+	local why = "StudioCapture: " .. tostring(capErr or "returned nil — if Studio showed a screenshot permission prompt, accept it")
+	if camErr then
+		why = why .. " | camera: " .. tostring(camErr)
+	end
+	return "ERROR: screenshot failed — " .. why
 end
 
 -- RunService has no IsPaused in current Studio builds (it crashes); a
@@ -403,12 +512,12 @@ local function forgeGameInfo()
 	pcall(function()
 		jobId = job.get("id")
 	end)
-	return ("Place ID: %d\nJob ID: %s\nStudio mode: %s\nSelected: %d instance(s)\nServer name: %s"):format(
+	return ("Place ID: %d\nJob ID: %s\nStudio mode: %s\nSelected: %d instance(s)\nPlace name: %s"):format(
 		game.PlaceId,
 		tostring(jobId),
 		mode,
 		#Selection:Get(),
-		tostring(game.ServerName)
+		tostring(game.Name)
 	)
 end
 
@@ -527,5 +636,6 @@ end
 
 -- Exported for the bridge-only tools (ExtraTools.lua).
 LocalTools.resolvePath = resolvePath
+LocalTools.coerceValue = coerceValue
 
 return LocalTools

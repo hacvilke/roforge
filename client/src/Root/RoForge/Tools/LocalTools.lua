@@ -36,6 +36,68 @@ do
 	end
 end
 
+-- Coerces model-supplied values (JSON: strings / tables) into what Roblox
+-- property setters accept: numbers, booleans, Vector3 / UDim2 / Color3 /
+-- CFrame from "x, y, z" strings or {x=,y=,z=}-style tables.
+local function coerceValue(v)
+	if type(v) == "string" then
+		local n = tonumber(v)
+		if n then
+			return n
+		end
+		if v == "true" then
+			return true
+		end
+		if v == "false" then
+			return false
+		end
+		local t = v:gsub("^%s*", ""):gsub("%s*$", "")
+		if t:sub(1, 1) == "{" then
+			t = t:sub(2):gsub("}$", "")
+		end
+		local num = "[%d%.%-%e]+"
+		local sep = "%s*,%s*"
+		local x, y, z = t:match("^(" .. num .. ")" .. sep .. "(" .. num .. ")" .. sep .. "(" .. num .. ")$")
+		if x then
+			return Vector3.new(tonumber(x), tonumber(y), tonumber(z))
+		end
+		local a, b, c, d = t:match("^(" .. num .. ")" .. sep .. "(" .. num .. ")" .. sep .. "(" .. num .. ")" .. sep .. "(" .. num .. ")$")
+		if a then
+			return UDim2.new(tonumber(a), tonumber(b), tonumber(c), tonumber(d))
+		end
+		if t:find(" ", 1, true) and t:match("^%d") then
+			local ok, cf = pcall(CFrame.new, t)
+			if ok then
+				return cf
+			end
+		end
+	end
+	if type(v) == "table" then
+		local pick = function(l, u)
+			if v[l] ~= nil then
+				return v[l]
+			end
+			return v[u]
+		end
+		if pick("x", "X") ~= nil or pick("y", "Y") ~= nil or pick("z", "Z") ~= nil then
+			return Vector3.new(tonumber(pick("x", "X")) or 0, tonumber(pick("y", "Y")) or 0, tonumber(pick("z", "Z")) or 0)
+		end
+		local r = pick("R", "r")
+		local g = pick("G", "g")
+		local b = pick("B", "b")
+		if r ~= nil or g ~= nil or b ~= nil then
+			r, g, b = tonumber(r) or 0, tonumber(g) or 0, tonumber(b) or 0
+			local scale = (r > 1 or g > 1 or b > 1) and 1 or 255
+			return Color3.fromRGB(math.floor(r * scale + 0.5), math.floor(g * scale + 0.5), math.floor(b * scale + 0.5))
+		end
+		if pick("ScaleX", "sx") ~= nil or pick("OffsetX", "ox") ~= nil then
+			return UDim2.new(tonumber(pick("ScaleX", "sx")) or 0, tonumber(pick("OffsetX", "ox")) or 0,
+				tonumber(pick("ScaleY", "sy")) or 0, tonumber(pick("OffsetY", "oy")) or 0)
+		end
+	end
+	return v
+end
+
 local function splitPath(pathStr)
 	local parts = {}
 	for part in string.gmatch(tostring(pathStr or ""), "[^%.]+") do
@@ -229,7 +291,7 @@ local function forgeCreate(args)
 		local setLines = {}
 		for propName, propVal in pairs(props) do
 			local okSet, setErr = pcall(function()
-				inst[propName] = propVal
+				inst[propName] = coerceValue(propVal)
 			end)
 			if okSet then
 				table.insert(setLines, "  set " .. propName)
@@ -379,7 +441,7 @@ local function forgeScreenshot(args)
 		return ("Screenshot saved as '%s.png' on your Desktop (legacy Studio build)."):format(name)
 			.. " (Vision of the viewport goes through the bridge — ask for forge_viewport.)"
 	end
-	return "ERROR: screenshot failed: " .. tostring(capErr or "unknown error")
+	return "ERROR: screenshot failed: " .. tostring(capErr or "returned nil — if Studio showed a screenshot permission prompt, accept it")
 end
 
 -- RunService has no IsPaused in current Studio builds (it crashes); a
@@ -401,12 +463,12 @@ local function forgeGameInfo()
 	pcall(function()
 		jobId = job.get("id")
 	end)
-	return ("Place ID: %d\nJob ID: %s\nStudio mode: %s\nSelected: %d instance(s)\nServer name: %s"):format(
+	return ("Place ID: %d\nJob ID: %s\nStudio mode: %s\nSelected: %d instance(s)\nPlace name: %s"):format(
 		game.PlaceId,
 		tostring(jobId),
 		mode,
 		#Selection:Get(),
-		tostring(game.ServerName)
+		tostring(game.Name)
 	)
 end
 

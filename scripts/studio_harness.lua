@@ -202,8 +202,9 @@ local STRICT_PROPS = {
 
 -- property TYPE checks (Studio rejects wrong-typed values)
 local PROP_TYPES = {
-	Size = "UDim2", Position = "UDim2", CanvasSize = "UDim2",
-	CanvasPosition = "Vector2",
+	-- NOTE: class-dependent types (Part.Size = Vector3, Frame.Size = UDim2,
+	-- RenderSurfaceTexture.CanvasSize = Vector2) are intentionally NOT here —
+	-- a global map cannot express per-class types.
 	Padding = "UDim", CornerRadius = "UDim",
 	PaddingTop = "UDim", PaddingBottom = "UDim",
 	PaddingLeft = "UDim", PaddingRight = "UDim",
@@ -231,7 +232,7 @@ local created = {}
 local dockGuis = {}
 
 local function makeInstance(class, name)
-	local inst = { ClassName = class, Name = name or class, _children = {}, _props = {} }
+	local inst = { ClassName = class, _children = {}, _props = {} }
 	table.insert(created, inst)
 	if class == "PluginToolbarButton" then
 		rawset(inst._props, "SetActive", function(self, active)
@@ -241,7 +242,16 @@ local function makeInstance(class, name)
 	if class == "TextLabel" or class == "TextBox" then
 		rawset(inst._props, "TextBounds", { X = 100, Y = 16 })
 	end
-	return setmetatable(inst, {
+	if class == "RenderSurfaceTexture" then
+		rawset(inst._props, "Image", {
+			Read = function()
+				local w = rawget(inst._props, "Width") or 1024
+				local h = rawget(inst._props, "Height") or 576
+				return string.rep("\0", w * h * 4)
+			end,
+		})
+	end
+	inst = setmetatable(inst, {
 		__index = function(t, k)
 			if k == "Parent" then
 				return rawget(t, "_parent")
@@ -329,7 +339,7 @@ local function makeInstance(class, name)
 							table.insert(out, {
 								Name = prop,
 								GetValue = function()
-									return rawget(t, prop)
+									return rawget(t._props, prop)
 								end,
 								IsRequiredProperty = function()
 									return false
@@ -383,6 +393,19 @@ local function makeInstance(class, name)
 				end
 				return
 			end
+			if k == "Name" then
+				-- renaming must update the parent's child map, like real Roblox.
+				-- Name lives in _props (never a raw field) so every write reaches
+				-- this handler — raw-field writes bypass __newindex.
+				local pp = rawget(t, "_parent")
+				local oldName = rawget(t._props, "Name")
+				rawset(t._props, "Name", v)
+				if pp and pp._children then
+					pp._children[oldName] = nil
+					pp._children[v] = t
+				end
+				return
+			end
 			if STRICT_PROPS[class] and not STRICT_PROPS[class][k] then
 				error(string.format('%s is not a valid member of %s "%s"', k, class, t.Name), 0)
 			end
@@ -396,12 +419,45 @@ local function makeInstance(class, name)
 			rawset(t._props, k, v)
 		end,
 	})
+	-- Name goes through the handler: stored in _props, parent map kept in sync
+	inst.Name = name or class
+	return inst
 end
 
 local InstT = {}
+-- Instantiable classes (Instance.new rejects anything else in real Roblox —
+-- e.g. "Invalid class name: BasePart"). Mirrors that so the test harness
+-- catches bad class names the way Studio would.
+local CREATABLE = {
+	Script = true, LocalScript = true, ModuleScript = true, Folder = true, Model = true,
+	Part = true, MeshPart = true, Truss = true, CornerWedge = true, SpherePart = true,
+	CylinderPart = true, WedgePart = true, FileMesh = true, UnionOperation = true,
+	SubtractionOperation = true,
+	Tool = true, Handle = true, Humanoid = true, CharacterMesh = true, VehicleSeat = true,
+	SpawnLocation = true, ForceField = true, WorldRoot = true, TeleportPad = true,
+	Weld = true, Motor6D = true, HingeConstraint = true, LinearMotor = true,
+	BallSocketConstraint = true, SpringArm = true,
+	BodyMover = true, BodyForce = true, BodyGyro = true, BodyPosition = true,
+	Decal = true, ParticleEmitter = true, Sparkles = true, Trail = true, Fire = true,
+	Beam = true, Smoke = true, Attachment = true, Path = true, SurfaceGui = true,
+	PointLight = true, Spotlight = true, SurfaceLight = true, Omnilight = true,
+	RectAreaLight = true,
+	ScreenGui = true, BillboardGui = true, Frame = true, TextLabel = true,
+	TextButton = true, TextBox = true, ImageLabel = true, ImageButton = true,
+	ViewportFrame = true, CanvasGroup = true, ScrollingFrame = true,
+	UIGridLayout = true, UIListLayout = true, UIPadding = true, UIStroke = true,
+	UICorner = true, UISizeConstraint = true, UIScale = true,
+	UIAspectRatioConstraint = true, UICanvasFrame = true,
+	RemoteEvent = true, RemoteFunction = true, Sound = true, Music = true,
+	RenderSurfaceTexture = true, Camera = true,
+}
+
 function InstT.new(class, parent)
 	if class == nil then
 		missingArg(1)
+	end
+	if type(class) ~= "string" or not CREATABLE[class] then
+		error("Invalid class name: " .. tostring(class), 0)
 	end
 	local inst = makeInstance(class)
 	if parent then
@@ -719,7 +775,7 @@ local gameT
 local workspaceInst
 gameT = setmetatable({
 	PlaceId = 0,
-	ServerName = "smoke",
+	Name = "Place1",
 }, {
 	__index = function(_, k)
 		if k == "GetService" then
@@ -730,6 +786,7 @@ gameT = setmetatable({
 				local out = {}
 				if not workspaceInst then
 					workspaceInst = makeInstance("Workspace")
+					rawset(workspaceInst._props, "CurrentCamera", makeInstance("Camera"))
 				end
 				table.insert(out, workspaceInst)
 				local function walk(inst)
@@ -748,6 +805,7 @@ gameT = setmetatable({
 		if k == "Workspace" or k == "workspace" then
 			if not workspaceInst then
 				workspaceInst = makeInstance("Workspace")
+				rawset(workspaceInst._props, "CurrentCamera", makeInstance("Camera"))
 			end
 			return workspaceInst
 		end

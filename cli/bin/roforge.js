@@ -290,6 +290,14 @@ async function main() {
       }
       const { dest } = installPlugin(which, { destName: flags.name });
       console.log(bold("RoForge plugin installed") + dim(" — " + PLUGINS[which].desc + "\n"));
+      const { stalePluginFiles } = await import("../src/install.js");
+      const stale = stalePluginFiles(undefined, path.basename(dest));
+      if (stale.length) {
+        console.log(yellow("\nwarning: other RoForge plugin files are still in the plugins folder:"));
+        for (const f of stale) console.log("  - " + f);
+        console.log(dim("  Studio loads every file in that folder — you'd run two plugin versions at once."));
+        console.log(dim("  delete the old ones (keep only " + path.basename(dest) + " for " + which + "), then restart Studio."));
+      }
       console.log(`  ${green("✓")} ${src}\n  →  ${dest}\n`);
       console.log(bold("Next:"));
       console.log("  1. start (or restart) Roblox Studio and open a place");
@@ -345,6 +353,14 @@ async function main() {
       } catch (e) {
         console.error(red(`bridge could not start on port ${cfg.bridge.port}: ${e.message}`));
         process.exit(1);
+      }
+      const { stalePluginFiles, pluginsDir } = await import("../src/install.js");
+      const stale = stalePluginFiles(undefined, "RoForgeBridge.rbxm");
+      if (stale.length) {
+        console.log(yellow("warning: multiple RoForge plugins installed — the demo may flap between versions:"));
+        for (const f of stale) console.log("  - " + path.join(pluginsDir(), f));
+        console.log(dim("  delete the extras, restart Studio, and re-run `roforge demo house`."));
+        console.log();
       }
       console.log(bold("RoForge demo — building a house in your open place") + "\n");
       console.log(dim(`waiting for the RoForge Bridge plugin @ http://${cfg.bridge.host}:${cfg.bridge.port} ...`));

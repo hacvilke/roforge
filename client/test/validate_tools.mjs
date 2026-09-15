@@ -22,11 +22,12 @@ const read = (rel) => readFileSync(path.join(pluginDir, rel), "utf8");
 const R = "src/Root/RoForge/";
 
 const steps = [
-  { tool: "forge_game_info", args: {}, expect: "Place ID" },
+  { tool: "forge_game_info", args: {}, expect: "Place name: Place1" },
   { tool: "forge_tree", args: { root: "workspace", max_depth: 1 }, expect: "Workspace" },
   { tool: "forge_tree", args: { root: "Workspace", max_depth: 1 }, expect: "Workspace" },
   { tool: "forge_selected", args: {}, expect: "Nothing is selected" },
-  { tool: "forge_create", args: { parent_path: "workspace", class_name: "Part", name: "CPart" }, expect: "Created Part at" },
+  { tool: "forge_create", args: { parent_path: "workspace", class_name: "Part", name: "CPart", properties: { Size: { x: 8, y: 1, z: 4 } } }, expect: "set Size" },
+  { tool: "forge_create", args: { parent_path: "workspace", class_name: "BasePart", name: "Bad" }, expectError: "Invalid class name" },
   { tool: "forge_read", args: { path: "workspace.CPart" }, expect: "CPart" },
   { tool: "forge_write", args: { path: "workspace.CMain", source: "print('client')" }, expect: "Wrote" },
   { tool: "forge_read", args: { path: "workspace.CMain" }, expect: "client" },

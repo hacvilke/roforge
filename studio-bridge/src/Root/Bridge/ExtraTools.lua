@@ -34,21 +34,7 @@ local function serializeValue(v)
 	return tostring(v)
 end
 
-local function coerceValue(v)
-	if type(v) == "string" then
-		local n = tonumber(v)
-		if n then
-			return n
-		end
-		if v == "true" then
-			return true
-		end
-		if v == "false" then
-			return false
-		end
-	end
-	return v
-end
+local coerceValue = LocalTools.coerceValue
 
 local function forgeViewport(args)
 	return Viewport.capture(args)
