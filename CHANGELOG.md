@@ -3,6 +3,36 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.24 — 2026-09-20
+
+### Fixed (Roblox API accuracy audit)
+Audited every Roblox API the product touches against the current Studio
+API dump + official docs. Four real bugs found and fixed:
+
+- **`Part.Color3` does not exist** — the real property is `Part.Color`
+  (type Color3). All scene JSON (demo house, obby scaffold), the agent's
+  system prompt, and the skills now use `Color`. Setting `Color3` on a
+  part threw "not a valid member" in real Studio, silently dropping every
+  part color.
+- **ChangeHistoryService: the undo/redo tools used a removed API**
+  (`SetChangePoint` / `SetChangeHistoryIndex` / `ChangeHistoryIndex` no
+  longer exist). Rewritten on the modern API: `SetWaypoint`, `Undo`,
+  `Redo`, `GetCanUndo`, `GetCanRedo` — and a new `forge_redo` tool.
+  Checkpoints are now honest named waypoints; undo is step-based
+  (`forge_undo {steps: N}`).
+- **Removed the `game:Screenshot` fallback** in the client plugin —
+  `DataModel:Screenshot` was removed from Studio (~0.714);
+  StudioCaptureService is the only path.
+- **`Sound.Looped`, not `Loops`** — corrected in the visuals skill.
+
+### Hardened (harness fidelity)
+- Harness now REJECTS unknown Part/SpawnLocation/MeshPart properties
+  exactly like real Roblox (`Color3` on a Part now errors in tests, so
+  this bug class can never ship again).
+- `buffer` bytes are read with `tostring(buf)` (the documented path).
+- Tool battery: 32 bridge calls — new regression steps prove the
+  Color3 rejection, Color read-back, and redo.
+
 ## 0.3.23 — 2026-09-20
 
 ### Added

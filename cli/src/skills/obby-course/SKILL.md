@@ -25,8 +25,8 @@ parts, TAG THEM — an untagged part is invisible to gameplay.
 
 ## Building course geometry
 - Call forge_import ONCE with a full scene JSON for any batch of parts. Part properties:
-  Size {X,Y,Z}, Position {X,Y,Z} (world center), Color3 {R,G,B} (0-1 floats), Material,
-  Anchored=true (always anchor course parts).
+  Size {X,Y,Z}, Position {X,Y,Z} (world center), Color {R,G,B} (0-1 floats — the property
+  is named Color, NOT Color3), Material, Anchored=true (always anchor course parts).
 - Platform recipe: Size ~ (12, 1, 12) or wider for starts; gaps: 6-10 studs horizontal,
   2-4 studs up per step for normal difficulty. Jump height with default Humanoid is
   ~5 studs, horizontal reach over a flat ~12-14 studs — keep gaps under that.

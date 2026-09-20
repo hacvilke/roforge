@@ -449,7 +449,7 @@ local function studioCaptureBytes(w, h)
 		return nil, "GetBuffer failed: " .. tostring(buf)
 	end
 	local okStr, bytes = pcall(function()
-		return buf:ToString()
+		return tostring(buf)
 	end)
 	if not okStr or type(bytes) ~= "string" or #bytes < 8 then
 		return nil, "could not read the capture buffer"
@@ -473,15 +473,8 @@ local function forgeScreenshot(args)
 		end
 		return "ERROR: screenshot captured but could not be saved to plugin storage"
 	end
-	-- Legacy builds (before StudioCaptureService): DataModel:Screenshot wrote
-	-- straight to a system folder
-	local okOld = pcall(function()
-		game:Screenshot(w, h, name, Enum.Folder.Desktop)
-	end)
-	if okOld then
-		return ("Screenshot saved as '%s.png' on your Desktop (legacy Studio build)."):format(name)
-			.. " (Vision of the viewport goes through the bridge — ask for forge_viewport.)"
-	end
+	-- Note: there is NO legacy fallback — DataModel:Screenshot was removed from
+	-- Studio (gone since ~0.714), so StudioCaptureService is the only path.
 	return "ERROR: screenshot failed: " .. tostring(capErr or "returned nil — if Studio showed a screenshot permission prompt, accept it")
 end
 

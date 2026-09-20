@@ -168,33 +168,35 @@ local function forgeSelect(args)
 end
 
 -- ---------------- ChangeHistoryService (undo/redo) wrappers ----------------
--- Studio's ChangeHistoryService lets us name points in the undo history and
--- jump back to them — so a batch of destructive tool calls can be rolled
--- back as a unit (the built-in MCP does the same for its writes).
+-- Modern Studio API: SetWaypoint(name) names a point in the undo history,
+-- Undo()/Redo() move one step at a time, GetCanUndo()/GetCanRedo() report
+-- state. (The old SetChangePoint / SetChangeHistoryIndex / ChangeHistoryIndex
+-- APIs were removed from Studio — do not call them.)
 local ChangeHistory = game:GetService("ChangeHistoryService")
-local checkpoints = {} -- name -> change-history index (insertion order kept)
-local cpOrder = {}
+local cpOrder = {} -- checkpoint names recorded this session (insertion order)
 
-local function cpIndex()
-	local ok, i = pcall(function()
-		return ChangeHistory:ChangeHistoryIndex()
+local function canUndo()
+	local ok, v = pcall(function()
+		return ChangeHistory:GetCanUndo()
 	end)
-	return ok and i or nil
+	return ok and v or false
+end
+
+local function canRedo()
+	local ok, v = pcall(function()
+		return ChangeHistory:GetCanRedo()
+	end)
+	return ok and v or false
 end
 
 local function forgeCheckpoint(args)
 	local name = tostring(args.name or "checkpoint")
-	local idx = cpIndex()
-	if not idx then
-		return "ERROR: ChangeHistoryService:ChangeHistoryIndex() unavailable"
-	end
 	local ok, err = pcall(function()
-		ChangeHistory:SetChangePoint(name)
+		ChangeHistory:SetWaypoint(name)
 	end)
 	if not ok then
-		return "ERROR: SetChangePoint failed: " .. tostring(err)
+		return "ERROR: SetWaypoint failed: " .. tostring(err)
 	end
-	checkpoints[name] = idx
 	local exists = false
 	for _, n in ipairs(cpOrder) do
 		if n == name then
@@ -205,52 +207,72 @@ local function forgeCheckpoint(args)
 	if not exists then
 		cpOrder[#cpOrder + 1] = name
 	end
-	return ("checkpoint '%s' set at change-history index %d (also marked natively)"):format(name, idx)
+	return ("checkpoint '%s' set as a named waypoint in Studio's undo history"):format(name)
 end
 
 local function forgeUndo(args)
-	local to = args.to and tostring(args.to) or nil
-	local cur = cpIndex()
-	if not cur then
-		return "ERROR: ChangeHistoryService:ChangeHistoryIndex() unavailable"
+	local steps = math.min(math.max(tonumber(args.steps) or 1, 1), 50)
+	if not canUndo() then
+		return "nothing to undo (GetCanUndo = false)"
 	end
-	local target
-	if to then
-		target = checkpoints[to]
-		if not target then
-			local names = {}
-			for _, n in ipairs(cpOrder) do
-				names[#names + 1] = n
-			end
-			return "ERROR: no checkpoint named '" .. to .. "'" .. (#names > 0 and (" (available: " .. table.concat(names, ", ") .. ")") or "")
+	local done = 0
+	local lastErr
+	for _ = 1, steps do
+		if not canUndo() then
+			break
 		end
-	else
-		target = cur - 1
+		local ok, err = pcall(function()
+			ChangeHistory:Undo()
+		end)
+		if not ok then
+			lastErr = err
+			break
+		end
+		done = done + 1
 	end
-	if target >= cur then
-		return ("already at or before index %d (current %d) — nothing to undo"):format(target, cur)
+	if lastErr then
+		return ("ERROR: Undo failed after %d step(s): %s"):format(done, tostring(lastErr))
 	end
-	local ok, err = pcall(function()
-		ChangeHistory:SetChangeHistoryIndex(target)
-	end)
-	if not ok then
-		return "ERROR: SetChangeHistoryIndex(" .. target .. ") failed: " .. tostring(err)
+	return ("undid %d step(s); canUndo=%s canRedo=%s"):format(done, tostring(canUndo()), tostring(canRedo()))
+end
+
+local function forgeRedo(args)
+	local steps = math.min(math.max(tonumber(args.steps) or 1, 1), 50)
+	if not canRedo() then
+		return "nothing to redo (GetCanRedo = false)"
 	end
-	local what = to and ("checkpoint '" .. to .. "'") or "one step"
-	return ("undid back to index %d (%s); current index is now %d"):format(target, what, target)
+	local done = 0
+	local lastErr
+	for _ = 1, steps do
+		if not canRedo() then
+			break
+		end
+		local ok, err = pcall(function()
+			ChangeHistory:Redo()
+		end)
+		if not ok then
+			lastErr = err
+			break
+		end
+		done = done + 1
+	end
+	if lastErr then
+		return ("ERROR: Redo failed after %d step(s): %s"):format(done, tostring(lastErr))
+	end
+	return ("redid %d step(s); canUndo=%s canRedo=%s"):format(done, tostring(canUndo()), tostring(canRedo()))
 end
 
 local function forgeCheckpoints()
-	local cur = cpIndex()
-	if not cur then
-		return "ERROR: ChangeHistoryService:ChangeHistoryIndex() unavailable"
-	end
-	local lines = { ("current change-history index: %d"):format(cur) }
-	for _, n in ipairs(cpOrder) do
-		lines[#lines + 1] = ("  %s  (index %d, %d steps back)"):format(n, checkpoints[n], cur - checkpoints[n])
-	end
+	local lines = {
+		("undo state: canUndo=%s canRedo=%s"):format(tostring(canUndo()), tostring(canRedo())),
+	}
 	if #cpOrder == 0 then
-		lines[#lines + 1] = "  (no checkpoints yet — use forge_checkpoint first)"
+		lines[#lines + 1] = "  (no checkpoints recorded yet in this session — use forge_checkpoint before destructive work)"
+	else
+		for i, n in ipairs(cpOrder) do
+			lines[#lines + 1] = ("  %d. %s"):format(i, n)
+		end
+		lines[#lines + 1] = "  (waypoints live in Studio's undo history — roll back with forge_undo {steps:N} or Studio's own Ctrl+Z)"
 	end
 	return table.concat(lines, "\n")
 end
@@ -904,7 +926,7 @@ local TOOLS = {
 	},
 	{
 		name = "forge_checkpoint",
-		description = "Mark the current Studio state as a named checkpoint in the undo history (e.g. before a batch of edits). Cheap; call it right before destructive work.",
+		description = "Mark the current Studio state as a named waypoint in the undo history (e.g. before a batch of edits). Cheap; call it right before destructive work.",
 		input_schema = {
 			type = "object",
 			properties = {
@@ -917,19 +939,31 @@ local TOOLS = {
 	},
 	{
 		name = "forge_undo",
-		description = "Undo Studio changes: pass to='name' to roll back to a named forge_checkpoint, or omit to undo one step. Destructive — use after forge_checkpoint when something goes wrong.",
+		description = "Undo N Studio edit steps (default 1, max 50) via ChangeHistoryService:Undo(). Roll back after a destructive batch that went wrong. Destructive to the user's place — say what you are rolling back.",
 		input_schema = {
 			type = "object",
 			properties = {
-				to = { type = "string", description = "Checkpoint name to roll back to (omit to undo one step)" },
+				steps = { type = "integer", description = "How many steps to undo (1-50, default 1)" },
 			},
 			additionalProperties = false,
 		},
 		run = forgeUndo,
 	},
 	{
+		name = "forge_redo",
+		description = "Redo N previously undone Studio edit steps (default 1, max 50) via ChangeHistoryService:Redo().",
+		input_schema = {
+			type = "object",
+			properties = {
+				steps = { type = "integer", description = "How many steps to redo (1-50, default 1)" },
+			},
+			additionalProperties = false,
+		},
+		run = forgeRedo,
+	},
+	{
 		name = "forge_checkpoints",
-		description = "List recorded checkpoints (name, index, steps back) and the current change-history index.",
+		description = "Show undo state (canUndo/canRedo) and the checkpoints named this session.",
 		input_schema = {
 			type = "object",
 			properties = {},

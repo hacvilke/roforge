@@ -55,15 +55,22 @@ const steps = [
   { tool: "forge_viewport", args: {}, expectTableWith: { field: "imageBase64", minLen: 64 } },
   // small vision-check capture (what the model uses to see its own work)
   { tool: "forge_viewport", args: { small: true }, expectTableWith: { field: "imageBase64", minLen: 64 } },
-  // native change-history integration (SetChangePoint / ChangeHistoryIndex)
+  // native change-history integration (modern API: SetWaypoint / Undo / Redo /
+  // GetCanUndo / GetCanRedo — the old SetChangePoint/SetChangeHistoryIndex were removed)
   { tool: "forge_checkpoint", args: { name: "cp1" }, expect: "checkpoint 'cp1' set" },
   { tool: "forge_checkpoints", args: {}, expect: "cp1" },
-  { tool: "forge_undo", args: {}, expect: "undid back to index" },
+  { tool: "forge_undo", args: {}, expect: "undid 1 step" },
+  { tool: "forge_redo", args: {}, expect: "redid 1 step" },
   { tool: "forge_snapshot", args: { name: "snap1" }, expect: "snapshot 'snap1' captured" },
   { tool: "forge_diff", args: { name: "snap1" }, expect: "diff vs snapshot 'snap1'" },
   { tool: "forge_export", args: { path: "Workspace.RoForgeHouse" }, expect: "RoForgeHouse" },
   // table-form properties ({x=,y=,z=}) must be coerced to Vector3
   { tool: "forge_create", args: { parent_path: "Workspace.RoForgeHouse", class_name: "Part", name: "Lamp", properties: { Size: { x: 5, y: 5, z: 5 } } }, expect: "Size = " },
+  // the imported house part carries a real Color property (0-1 Color3)
+  { tool: "forge_get_property", args: { path: "Workspace.RoForgeHouse.FloorSlab", property: "Color" }, expect: "property 'Color'" },
+  // regression: Part has NO Color3 property — real Roblox rejects the set,
+  // and the harness must reject it the same way
+  { tool: "forge_set_property", args: { path: "Workspace.RoForgeHouse.Lamp", property: "Color3", value: { r: 1, g: 0, b: 0 } }, expectError: "not a valid member" },
   // abstract classes must be rejected like real Roblox does
   { tool: "forge_create", args: { parent_path: "Workspace", class_name: "BasePart", name: "Bad" }, expectError: "Invalid class name" },
   { tool: "forge_create", args: { parent_path: "Workspace", class_name: "TotallyBogus", name: "Bad" }, expectError: "Invalid class name" },

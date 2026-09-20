@@ -41,10 +41,12 @@ if not ok${n} then fail(${luaString(st.tool)} .. " raised: " .. tostring(r${n}))
 end
 noCrash(${luaString(st.tool)}, r${n})`;
     } else if (st.expectError != null) {
+      // expectError: the tool deliberately hits a rejection (bad class,
+      // unknown property, ...) and must surface a clean ERROR. noCrash would
+      // false-positive on the rejection text, so only the shape is checked.
       check = `if type(r${n}) ~= "string" or r${n}:sub(1, 5) ~= "ERROR" or not r${n}:find(${luaString(st.expectError)}, 1, true) then
 \tfail(${luaString(st.tool)} .. " expected ERROR with " .. ${luaString(st.expectError)} .. ", got: " .. tostring(r${n}):sub(1, 400))
-end
-noCrash(${luaString(st.tool)}, r${n})`;
+end`;
     } else {
       check = `check(${luaString(st.tool)}, r${n}, ${luaString(st.expect)})`;
     }

@@ -166,6 +166,18 @@ local TEXT_PROPS = {
 	TextTruncate = true, RichText = true, PlaceholderText = true,
 	PlaceholderColor3 = true,
 }
+local PART_PROPS = {
+	-- Real Part/BasePart properties from the current API dump. Deliberately tight:
+	-- real Roblox REJECTS unknown properties ("The property Color3 does not exist
+	-- in Part" — the classic trap: Part has Color, not Color3), and the harness
+	-- must reject them the same way.
+	Name = true, Parent = true, CFrame = true, Position = true, Size = true, Rotation = true,
+	Orientation = true, Color = true, Material = true, Anchored = true, CanCollide = true,
+	CanQuery = true, CanTouch = true, CastShadow = true, Massless = true, Transparency = true,
+	Shape = true, TextureId = true, BrickColor = true, CanStream = true, Active = true,
+	ReflectionType = true, CustomPhysicalProperties = true, CollisionGroup = true,
+	Weld = true, Mass = true,
+}
 local STRICT_PROPS = {
 	DockWidgetPluginGui = {
 		-- real API: Title, Enabled (show/hide), InitialDockState — NO Visible prop
@@ -198,6 +210,12 @@ local STRICT_PROPS = {
 		Name = true, Padding = true, SortOrder = true, FillDirection = true,
 		VerticalAlignment = true, HorizontalAlignment = true,
 	},
+	Part = PART_PROPS,
+	MeshPart = mergeProps(PART_PROPS, { MeshId = true, MeshContent = true, MeshFace = true }),
+	SpawnLocation = mergeProps(PART_PROPS, {
+		Enabled = true, Duration = true, Neutral = true, TeamColor = true,
+		AllowTeamChangeOnTouch = true,
+	}),
 }
 
 -- property TYPE checks (Studio rejects wrong-typed values)
@@ -210,6 +228,7 @@ local PROP_TYPES = {
 	PaddingLeft = "UDim", PaddingRight = "UDim",
 	BackgroundColor3 = "Color3", BorderColor3 = "Color3",
 	TextColor3 = "Color3", PlaceholderColor3 = "Color3",
+	Color = "Color3",
 }
 
 local KNOWN_EVENTS = {
@@ -672,7 +691,7 @@ local function jsonEncode(v)
 end
 
 local services = {}
-local changeHistoryIndex = 10
+-- (changeHistory state lives inside the ChangeHistoryService mock)
 local function getService(name, fallback)
 	-- called both as game:GetService("X") (self arrives as `name`) and
 	-- getService("X")
@@ -707,21 +726,23 @@ local function getService(name, fallback)
 		props.RequestScreenshotPermissionAsync = function()
 			return true
 		end
-		props.CaptureScreenshot = function()
-			return {
-				BufferStatus = EnumT.StudioCaptureBufferStatus.Ready,
-				GetBuffer = function()
-					return {
-						ToString = function()
-							return FAKE_PNG
-						end,
-					}
-				end,
-				GetErrors = function()
-					return {}
-				end,
-			}
-		end
+			props.CaptureScreenshot = function()
+				-- a real buffer converts via tostring() (a __tostring
+				-- metamethod) — the tool uses tostring(buf), so the fake must too
+				return {
+					BufferStatus = EnumT.StudioCaptureBufferStatus.Ready,
+					GetBuffer = function()
+						return setmetatable({}, {
+							__tostring = function()
+								return FAKE_PNG
+							end,
+						})
+					end,
+					GetErrors = function()
+						return {}
+					end,
+				}
+			end
 		services[name] = inst
 		return inst
 	end
@@ -758,13 +779,31 @@ local function getService(name, fallback)
 		props.IsStepped = function()
 			return false
 		end
-		props.SetChangePoint = function()
+		-- ChangeHistoryService (modern API): SetWaypoint / Undo / Redo /
+		-- GetCanUndo / GetCanRedo. The old names (SetChangePoint,
+		-- SetChangeHistoryIndex, ChangeHistoryIndex) were removed from Studio —
+		-- real Studio has no such methods, so this mock must NOT define them
+		-- (calling them must fail with "attempt to call a nil value", exactly
+		-- like it would in real Studio).
+		local chIndex = 10
+		local chRedoStack = {}
+		props.SetWaypoint = function()
 		end
-		props.ChangeHistoryIndex = function()
-			return changeHistoryIndex
+		props.Undo = function()
+			chIndex = chIndex - 1
+			chRedoStack[#chRedoStack + 1] = true
 		end
-		props.SetChangeHistoryIndex = function(_, i)
-			changeHistoryIndex = math.floor(tonumber(i) or changeHistoryIndex)
+		props.Redo = function()
+			if #chRedoStack > 0 then
+				table.remove(chRedoStack)
+				chIndex = chIndex + 1
+			end
+		end
+		props.GetCanUndo = function()
+			return chIndex > 1
+		end
+		props.GetCanRedo = function()
+			return #chRedoStack > 0
 		end
 		services[name] = inst
 	end

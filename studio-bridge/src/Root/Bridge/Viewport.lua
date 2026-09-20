@@ -135,7 +135,7 @@ local function tryStudioCapture(w, h)
 		return nil, "GetBuffer failed: " .. tostring(buf)
 	end
 	local okStr, bytes = pcall(function()
-		return buf:ToString()
+		return tostring(buf)
 	end)
 	if not okStr or type(bytes) ~= "string" or #bytes < 64 then
 		return nil, "could not read the capture buffer"

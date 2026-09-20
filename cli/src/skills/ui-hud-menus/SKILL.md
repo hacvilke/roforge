@@ -64,7 +64,7 @@ end)
 
 ## Menus (main menu / pause)
 - ScreenGui with `ResetOnSpawn = false` + a full-screen Frame (fromScale(1,1),
-  BackgroundTransparency 0, Color3 dark) + centered TextButtons.
+  BackgroundTransparency 0, BackgroundColor3 dark) + centered TextButtons.
 - Pause: a full-screen Frame + buttons on top; resume = `gui.Enabled = false`.
 - MobileButtons (Instance) for mobile players: create a `MobileButtons` in the gui for
   touch movement (JogButtons).

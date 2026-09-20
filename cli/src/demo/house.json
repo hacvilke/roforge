@@ -7,108 +7,204 @@
       "Name": "Floor",
       "Anchored": true,
       "Material": "Concrete",
-      "Color3": { "R": 0.62, "G": 0.62, "B": 0.64 },
-      "Size": { "X": 12, "Y": 0.5, "Z": 12 },
-      "CFrame": "0 0.25 0 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 12,
+        "Y": 0.5,
+        "Z": 12
+      },
+      "CFrame": "0 0.25 0 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.62,
+        "G": 0.62,
+        "B": 0.64
+      }
     },
     {
       "ClassName": "Part",
       "Name": "WallSouth",
       "Anchored": true,
       "Material": "SmoothPlastic",
-      "Color3": { "R": 0.9, "G": 0.87, "B": 0.8 },
-      "Size": { "X": 12, "Y": 4, "Z": 0.5 },
-      "CFrame": "0 2.5 5.75 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 12,
+        "Y": 4,
+        "Z": 0.5
+      },
+      "CFrame": "0 2.5 5.75 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.9,
+        "G": 0.87,
+        "B": 0.8
+      }
     },
     {
       "ClassName": "Part",
       "Name": "WallNorth",
       "Anchored": true,
       "Material": "SmoothPlastic",
-      "Color3": { "R": 0.9, "G": 0.87, "B": 0.8 },
-      "Size": { "X": 12, "Y": 4, "Z": 0.5 },
-      "CFrame": "0 2.5 -5.75 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 12,
+        "Y": 4,
+        "Z": 0.5
+      },
+      "CFrame": "0 2.5 -5.75 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.9,
+        "G": 0.87,
+        "B": 0.8
+      }
     },
     {
       "ClassName": "Part",
       "Name": "WallWest",
       "Anchored": true,
       "Material": "SmoothPlastic",
-      "Color3": { "R": 0.85, "G": 0.82, "B": 0.74 },
-      "Size": { "X": 0.5, "Y": 4, "Z": 11 },
-      "CFrame": "-5.75 2.5 0 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 0.5,
+        "Y": 4,
+        "Z": 11
+      },
+      "CFrame": "-5.75 2.5 0 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.85,
+        "G": 0.82,
+        "B": 0.74
+      }
     },
     {
       "ClassName": "Part",
       "Name": "WallEast",
       "Anchored": true,
       "Material": "SmoothPlastic",
-      "Color3": { "R": 0.85, "G": 0.82, "B": 0.74 },
-      "Size": { "X": 0.5, "Y": 4, "Z": 11 },
-      "CFrame": "5.75 2.5 0 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 0.5,
+        "Y": 4,
+        "Z": 11
+      },
+      "CFrame": "5.75 2.5 0 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.85,
+        "G": 0.82,
+        "B": 0.74
+      }
     },
     {
       "ClassName": "Part",
       "Name": "RoofFront",
       "Anchored": true,
       "Material": "Slate",
-      "Color3": { "R": 0.22, "G": 0.24, "B": 0.28 },
-      "Size": { "X": 13, "Y": 0.3, "Z": 6.8 },
-      "CFrame": "0 5.5 3 | 1 0 0 | 0 0.949 0.316 | 0 -0.316 0.949"
+      "Size": {
+        "X": 13,
+        "Y": 0.3,
+        "Z": 6.8
+      },
+      "CFrame": "0 5.5 3 | 1 0 0 | 0 0.949 0.316 | 0 -0.316 0.949",
+      "Color": {
+        "R": 0.22,
+        "G": 0.24,
+        "B": 0.28
+      }
     },
     {
       "ClassName": "Part",
       "Name": "RoofBack",
       "Anchored": true,
       "Material": "Slate",
-      "Color3": { "R": 0.22, "G": 0.24, "B": 0.28 },
-      "Size": { "X": 13, "Y": 0.3, "Z": 6.8 },
-      "CFrame": "0 5.5 -3 | 1 0 0 | 0 0.949 -0.316 | 0 -0.316 -0.949"
+      "Size": {
+        "X": 13,
+        "Y": 0.3,
+        "Z": 6.8
+      },
+      "CFrame": "0 5.5 -3 | 1 0 0 | 0 0.949 -0.316 | 0 -0.316 -0.949",
+      "Color": {
+        "R": 0.22,
+        "G": 0.24,
+        "B": 0.28
+      }
     },
     {
       "ClassName": "Part",
       "Name": "Door",
       "Anchored": true,
       "Material": "Wood",
-      "Color3": { "R": 0.45, "G": 0.3, "B": 0.18 },
-      "Size": { "X": 2, "Y": 3.5, "Z": 0.3 },
-      "CFrame": "0 2.25 5.95 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 2,
+        "Y": 3.5,
+        "Z": 0.3
+      },
+      "CFrame": "0 2.25 5.95 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.45,
+        "G": 0.3,
+        "B": 0.18
+      }
     },
     {
       "ClassName": "Part",
       "Name": "WindowWest1",
       "Anchored": true,
       "Material": "Glass",
-      "Color3": { "R": 0.7, "G": 0.85, "B": 0.9 },
-      "Size": { "X": 0.3, "Y": 1.5, "Z": 1.5 },
-      "CFrame": "-5.9 2.6 2.5 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 0.3,
+        "Y": 1.5,
+        "Z": 1.5
+      },
+      "CFrame": "-5.9 2.6 2.5 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.7,
+        "G": 0.85,
+        "B": 0.9
+      }
     },
     {
       "ClassName": "Part",
       "Name": "WindowWest2",
       "Anchored": true,
       "Material": "Glass",
-      "Color3": { "R": 0.7, "G": 0.85, "B": 0.9 },
-      "Size": { "X": 0.3, "Y": 1.5, "Z": 1.5 },
-      "CFrame": "-5.9 2.6 -2.5 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 0.3,
+        "Y": 1.5,
+        "Z": 1.5
+      },
+      "CFrame": "-5.9 2.6 -2.5 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.7,
+        "G": 0.85,
+        "B": 0.9
+      }
     },
     {
       "ClassName": "Part",
       "Name": "WindowEast",
       "Anchored": true,
       "Material": "Glass",
-      "Color3": { "R": 0.7, "G": 0.85, "B": 0.9 },
-      "Size": { "X": 0.3, "Y": 1.5, "Z": 1.5 },
-      "CFrame": "5.9 2.6 0 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 0.3,
+        "Y": 1.5,
+        "Z": 1.5
+      },
+      "CFrame": "5.9 2.6 0 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.7,
+        "G": 0.85,
+        "B": 0.9
+      }
     },
     {
       "ClassName": "Part",
       "Name": "Chimney",
       "Anchored": true,
       "Material": "Slate",
-      "Color3": { "R": 0.4, "G": 0.4, "B": 0.42 },
-      "Size": { "X": 1, "Y": 2.5, "Z": 1 },
-      "CFrame": "3 6.2 -2 | 1 0 0 | 0 1 0 | 0 0 1"
+      "Size": {
+        "X": 1,
+        "Y": 2.5,
+        "Z": 1
+      },
+      "CFrame": "3 6.2 -2 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.4,
+        "G": 0.4,
+        "B": 0.42
+      }
     }
   ]
 }

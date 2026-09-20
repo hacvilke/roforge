@@ -2,23 +2,350 @@
   "ClassName": "Model",
   "Name": "Obby",
   "Children": [
-    { "ClassName": "SpawnLocation", "Name": "ObbySpawn", "Anchored": true, "Material": "Neon", "Color3": { "R": 0.2, "G": 0.9, "B": 0.4 }, "Size": { "X": 4, "Y": 1, "Z": 4 }, "CFrame": "0 2 6 | 1 0 0 | 0 1 0 | 0 0 1" },
-    { "ClassName": "Part", "Name": "Platform1", "Anchored": true, "Material": "Concrete", "Color3": { "R": 0.55, "G": 0.55, "B": 0.6 }, "Size": { "X": 6, "Y": 0.5, "Z": 6 }, "CFrame": "0 2 0 | 1 0 0 | 0 1 0 | 0 0 1" },
-    { "ClassName": "Part", "Name": "Platform2", "Anchored": true, "Material": "Concrete", "Color3": { "R": 0.55, "G": 0.55, "B": 0.6 }, "Size": { "X": 6, "Y": 0.5, "Z": 6 }, "CFrame": "0 2 -12 | 1 0 0 | 0 1 0 | 0 0 1" },
-    { "ClassName": "Part", "Name": "Lava1", "Anchored": true, "Material": "Neon", "Color3": { "R": 1, "G": 0.25, "B": 0 }, "Size": { "X": 8, "Y": 0.5, "Z": 4 }, "CFrame": "0 1.5 -18 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "KillBrick": true } },
-    { "ClassName": "Part", "Name": "Platform3", "Anchored": true, "Material": "Concrete", "Color3": { "R": 0.55, "G": 0.55, "B": 0.6 }, "Size": { "X": 5, "Y": 0.5, "Z": 5 }, "CFrame": "0 3 -24 | 1 0 0 | 0 1 0 | 0 0 1" },
-    { "ClassName": "Part", "Name": "Checkpoint1", "Anchored": true, "Material": "Neon", "Color3": { "R": 0.2, "G": 0.9, "B": 0.4 }, "Size": { "X": 1.5, "Y": 0.4, "Z": 1.5 }, "CFrame": "-1.5 3.45 -24 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "CheckpointStage": 1 } },
-    { "ClassName": "Part", "Name": "Platform4", "Anchored": true, "Material": "Concrete", "Color3": { "R": 0.55, "G": 0.55, "B": 0.6 }, "Size": { "X": 5, "Y": 0.5, "Z": 5 }, "CFrame": "0 4 -36 | 1 0 0 | 0 1 0 | 0 0 1" },
-    { "ClassName": "Part", "Name": "MovingPlatform", "Anchored": true, "Material": "Metal", "Color3": { "R": 0.4, "G": 0.45, "B": 0.5 }, "Size": { "X": 4, "Y": 0.5, "Z": 4 }, "CFrame": "0 4 -42 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "MoveRange": 4, "MoveSpeed": 2 } },
-    { "ClassName": "Part", "Name": "Platform5", "Anchored": true, "Material": "Concrete", "Color3": { "R": 0.55, "G": 0.55, "B": 0.6 }, "Size": { "X": 5, "Y": 0.5, "Z": 5 }, "CFrame": "0 5 -48 | 1 0 0 | 0 1 0 | 0 0 1" },
-    { "ClassName": "Part", "Name": "Checkpoint2", "Anchored": true, "Material": "Neon", "Color3": { "R": 0.2, "G": 0.9, "B": 0.4 }, "Size": { "X": 1.5, "Y": 0.4, "Z": 1.5 }, "CFrame": "1.5 5.45 -48 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "CheckpointStage": 2 } },
-    { "ClassName": "Part", "Name": "Lava2", "Anchored": true, "Material": "Neon", "Color3": { "R": 1, "G": 0.25, "B": 0 }, "Size": { "X": 8, "Y": 0.5, "Z": 4 }, "CFrame": "0 4.5 -54 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "KillBrick": true } },
-    { "ClassName": "Part", "Name": "FinishPlatform", "Anchored": true, "Material": "Granite", "Color3": { "R": 0.75, "G": 0.7, "B": 0.5 }, "Size": { "X": 8, "Y": 0.5, "Z": 8 }, "CFrame": "0 5 -60 | 1 0 0 | 0 1 0 | 0 0 1" },
-    { "ClassName": "Part", "Name": "ShopKiosk", "Anchored": true, "Material": "DiamondPlate", "Color3": { "R": 0.3, "G": 0.5, "B": 1 }, "Size": { "X": 1.5, "Y": 1.5, "Z": 1.5 }, "CFrame": "3 5.75 -58 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "ShopKiosk": true } },
-    { "ClassName": "Part", "Name": "Coin1", "Anchored": true, "CanCollide": false, "Material": "Neon", "Color3": { "R": 1, "G": 0.85, "B": 0.1 }, "Size": { "X": 0.8, "Y": 0.8, "Z": 0.8 }, "CFrame": "0 3.3 -12 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "CoinValue": 10 } },
-    { "ClassName": "Part", "Name": "Coin2", "Anchored": true, "CanCollide": false, "Material": "Neon", "Color3": { "R": 1, "G": 0.85, "B": 0.1 }, "Size": { "X": 0.8, "Y": 0.8, "Z": 0.8 }, "CFrame": "1.5 4.3 -24 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "CoinValue": 10 } },
-    { "ClassName": "Part", "Name": "Coin3", "Anchored": true, "CanCollide": false, "Material": "Neon", "Color3": { "R": 1, "G": 0.85, "B": 0.1 }, "Size": { "X": 0.8, "Y": 0.8, "Z": 0.8 }, "CFrame": "0 5.3 -36 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "CoinValue": 10 } },
-    { "ClassName": "Part", "Name": "Coin4", "Anchored": true, "CanCollide": false, "Material": "Neon", "Color3": { "R": 1, "G": 0.85, "B": 0.1 }, "Size": { "X": 0.8, "Y": 0.8, "Z": 0.8 }, "CFrame": "-1.5 6.3 -48 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "CoinValue": 10 } },
-    { "ClassName": "Part", "Name": "Coin5", "Anchored": true, "CanCollide": false, "Material": "Neon", "Color3": { "R": 1, "G": 0.85, "B": 0.1 }, "Size": { "X": 0.8, "Y": 0.8, "Z": 0.8 }, "CFrame": "0 6.3 -60 | 1 0 0 | 0 1 0 | 0 0 1", "Attributes": { "CoinValue": 25 } }
+    {
+      "ClassName": "SpawnLocation",
+      "Name": "ObbySpawn",
+      "Anchored": true,
+      "Material": "Neon",
+      "Size": {
+        "X": 4,
+        "Y": 1,
+        "Z": 4
+      },
+      "CFrame": "0 2 6 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.2,
+        "G": 0.9,
+        "B": 0.4
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Platform1",
+      "Anchored": true,
+      "Material": "Concrete",
+      "Size": {
+        "X": 6,
+        "Y": 0.5,
+        "Z": 6
+      },
+      "CFrame": "0 2 0 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.55,
+        "G": 0.55,
+        "B": 0.6
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Platform2",
+      "Anchored": true,
+      "Material": "Concrete",
+      "Size": {
+        "X": 6,
+        "Y": 0.5,
+        "Z": 6
+      },
+      "CFrame": "0 2 -12 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.55,
+        "G": 0.55,
+        "B": 0.6
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Lava1",
+      "Anchored": true,
+      "Material": "Neon",
+      "Size": {
+        "X": 8,
+        "Y": 0.5,
+        "Z": 4
+      },
+      "CFrame": "0 1.5 -18 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "KillBrick": true
+      },
+      "Color": {
+        "R": 1,
+        "G": 0.25,
+        "B": 0
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Platform3",
+      "Anchored": true,
+      "Material": "Concrete",
+      "Size": {
+        "X": 5,
+        "Y": 0.5,
+        "Z": 5
+      },
+      "CFrame": "0 3 -24 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.55,
+        "G": 0.55,
+        "B": 0.6
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Checkpoint1",
+      "Anchored": true,
+      "Material": "Neon",
+      "Size": {
+        "X": 1.5,
+        "Y": 0.4,
+        "Z": 1.5
+      },
+      "CFrame": "-1.5 3.45 -24 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "CheckpointStage": 1
+      },
+      "Color": {
+        "R": 0.2,
+        "G": 0.9,
+        "B": 0.4
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Platform4",
+      "Anchored": true,
+      "Material": "Concrete",
+      "Size": {
+        "X": 5,
+        "Y": 0.5,
+        "Z": 5
+      },
+      "CFrame": "0 4 -36 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.55,
+        "G": 0.55,
+        "B": 0.6
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "MovingPlatform",
+      "Anchored": true,
+      "Material": "Metal",
+      "Size": {
+        "X": 4,
+        "Y": 0.5,
+        "Z": 4
+      },
+      "CFrame": "0 4 -42 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "MoveRange": 4,
+        "MoveSpeed": 2
+      },
+      "Color": {
+        "R": 0.4,
+        "G": 0.45,
+        "B": 0.5
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Platform5",
+      "Anchored": true,
+      "Material": "Concrete",
+      "Size": {
+        "X": 5,
+        "Y": 0.5,
+        "Z": 5
+      },
+      "CFrame": "0 5 -48 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.55,
+        "G": 0.55,
+        "B": 0.6
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Checkpoint2",
+      "Anchored": true,
+      "Material": "Neon",
+      "Size": {
+        "X": 1.5,
+        "Y": 0.4,
+        "Z": 1.5
+      },
+      "CFrame": "1.5 5.45 -48 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "CheckpointStage": 2
+      },
+      "Color": {
+        "R": 0.2,
+        "G": 0.9,
+        "B": 0.4
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Lava2",
+      "Anchored": true,
+      "Material": "Neon",
+      "Size": {
+        "X": 8,
+        "Y": 0.5,
+        "Z": 4
+      },
+      "CFrame": "0 4.5 -54 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "KillBrick": true
+      },
+      "Color": {
+        "R": 1,
+        "G": 0.25,
+        "B": 0
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "FinishPlatform",
+      "Anchored": true,
+      "Material": "Granite",
+      "Size": {
+        "X": 8,
+        "Y": 0.5,
+        "Z": 8
+      },
+      "CFrame": "0 5 -60 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Color": {
+        "R": 0.75,
+        "G": 0.7,
+        "B": 0.5
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "ShopKiosk",
+      "Anchored": true,
+      "Material": "DiamondPlate",
+      "Size": {
+        "X": 1.5,
+        "Y": 1.5,
+        "Z": 1.5
+      },
+      "CFrame": "3 5.75 -58 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "ShopKiosk": true
+      },
+      "Color": {
+        "R": 0.3,
+        "G": 0.5,
+        "B": 1
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Coin1",
+      "Anchored": true,
+      "CanCollide": false,
+      "Material": "Neon",
+      "Size": {
+        "X": 0.8,
+        "Y": 0.8,
+        "Z": 0.8
+      },
+      "CFrame": "0 3.3 -12 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "CoinValue": 10
+      },
+      "Color": {
+        "R": 1,
+        "G": 0.85,
+        "B": 0.1
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Coin2",
+      "Anchored": true,
+      "CanCollide": false,
+      "Material": "Neon",
+      "Size": {
+        "X": 0.8,
+        "Y": 0.8,
+        "Z": 0.8
+      },
+      "CFrame": "1.5 4.3 -24 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "CoinValue": 10
+      },
+      "Color": {
+        "R": 1,
+        "G": 0.85,
+        "B": 0.1
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Coin3",
+      "Anchored": true,
+      "CanCollide": false,
+      "Material": "Neon",
+      "Size": {
+        "X": 0.8,
+        "Y": 0.8,
+        "Z": 0.8
+      },
+      "CFrame": "0 5.3 -36 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "CoinValue": 10
+      },
+      "Color": {
+        "R": 1,
+        "G": 0.85,
+        "B": 0.1
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Coin4",
+      "Anchored": true,
+      "CanCollide": false,
+      "Material": "Neon",
+      "Size": {
+        "X": 0.8,
+        "Y": 0.8,
+        "Z": 0.8
+      },
+      "CFrame": "-1.5 6.3 -48 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "CoinValue": 10
+      },
+      "Color": {
+        "R": 1,
+        "G": 0.85,
+        "B": 0.1
+      }
+    },
+    {
+      "ClassName": "Part",
+      "Name": "Coin5",
+      "Anchored": true,
+      "CanCollide": false,
+      "Material": "Neon",
+      "Size": {
+        "X": 0.8,
+        "Y": 0.8,
+        "Z": 0.8
+      },
+      "CFrame": "0 6.3 -60 | 1 0 0 | 0 1 0 | 0 0 1",
+      "Attributes": {
+        "CoinValue": 25
+      },
+      "Color": {
+        "R": 1,
+        "G": 0.85,
+        "B": 0.1
+      }
+    }
   ]
 }

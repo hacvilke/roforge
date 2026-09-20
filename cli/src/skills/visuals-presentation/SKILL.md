@@ -42,7 +42,8 @@ description: Make the game look good with parts — colors, materials, neon, mes
 
 ## Sound (atmosphere)
 - A `Sound` instance (child of the relevant part or SoundService):
-  `Sound.SoundId = "rbxassetid://..."`, `Loops = true`, `Volume = 0.3`.
+  `Sound.SoundId = "rbxassetid://..."`, `Looped = true`, `Volume = 0.3`.
+  (The property is `Looped`, not `Loops`.)
 - For a game-wide ambient: parent to `SoundService` in a ServerScript. Only add sounds
   the user asked for or that clearly fit (lava = low rumble; finish = chime).
 - No asset id → skip; a silent game is fine, a buzzing wrong sound is not.
@@ -57,6 +58,6 @@ description: Make the game look good with parts — colors, materials, neon, mes
 1. forge_viewport {small: true} after EVERY visual batch — check: consistent palette,
    nothing floating, neon actually glowing, z-fighting.
 2. forge_screenshot for a record the user can see.
-3. Iterate with forge_set (Color3, Material, CFrame) — 3-4 small adjustments beat one
-   big rebuild.
+3. Iterate with forge_set (Color, Material, CFrame) — 3-4 small adjustments beat one
+   big rebuild. (Part color property is `Color`, not `Color3`.)
 4. Ask the user what they think; taste is theirs, your job is fast execution.
