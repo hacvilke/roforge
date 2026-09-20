@@ -3,6 +3,31 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.22 — 2026-09-15
+
+### Added
+- **`roforge scaffold obby`**: pushes a *playable* obby into your open
+  place through the bridge — 19-part course (platforms, lava, a moving
+  platform, coins, checkpoint pads, shop kiosk), plus four wired
+  scripts:
+  - `ObbyData` — leaderstats (Coins/Stage) with DataStore load/save
+    (degrades to in-memory with a hint if API Services are off)
+  - `ObbyGameplay` — coins (respawn in 10s, 2x with pass), checkpoint
+    pads, kill bricks, moving platforms (tween), respawn-at-checkpoint
+  - `ObbyShop` — gamepass kiosk via ProximityPrompt (set `PASS_ID`
+    after creating the pass; safe no-op until then)
+  - `ObbyHUD` — local coins/stage/pass readout
+  - `forge_write` gains a `class` arg (Script / LocalScript /
+    ModuleScript) so the scaffold — and the agent — can write
+    LocalScripts.
+  - Scaffold integrity test in CI (scene JSON, part/attribute
+    completeness, every script compiles).
+
+### Improved
+- **System prompt**: for game requests the agent now points at the
+  scaffold first and extends it, instead of building game systems from
+  scratch.
+
 ## 0.3.21 — 2026-09-15
 
 ### Improved

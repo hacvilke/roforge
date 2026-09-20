@@ -399,6 +399,78 @@ async function main() {
       return;
     }
 
+    case "scaffold": {
+      const which = flags._pos && flags._pos[0];
+      if (which !== "obby") {
+        console.error(red("usage: roforge scaffold obby"));
+        process.exit(1);
+      }
+      const base = path.resolve(path.dirname(process.argv[1]), "../src/scaffold/obby");
+      const scene = JSON.parse(fs.readFileSync(path.join(base, "scene.json"), "utf8"));
+      const readScript = (name) => fs.readFileSync(path.join(base, "scripts", name), "utf8");
+      const scripts = [
+        { file: "ObbyData.lua", path: "ServerScriptService.ObbyScripts.ObbyData" },
+        { file: "ObbyGameplay.lua", path: "ServerScriptService.ObbyScripts.ObbyGameplay" },
+        { file: "ObbyShop.lua", path: "ServerScriptService.ObbyScripts.ObbyShop" },
+        { file: "ObbyHUD.lua", path: "StarterPlayer.StarterPlayerScripts.ObbyHUD", class: "LocalScript" },
+      ];
+      const bridge = new BridgeServer({ port: cfg.bridge.port, host: cfg.bridge.host, token: cfg.bridge.token });
+      try {
+        await bridge.start();
+      } catch (e) {
+        console.error(red(`bridge could not start on port ${cfg.bridge.port}: ${e.message}`));
+        process.exit(1);
+      }
+      const { stalePluginFiles } = await import("../src/install.js");
+      const stale = stalePluginFiles(undefined, "RoForgeBridge.rbxm");
+      if (stale.length) {
+        console.log(yellow("warning: multiple RoForge plugins installed — results may flap between versions. Delete the extras and restart Studio."));
+      }
+      console.log(bold("RoForge scaffold — building a playable obby in your open place") + "\n");
+      console.log(dim(`waiting for the RoForge Bridge plugin @ http://${cfg.bridge.host}:${cfg.bridge.port} ...`));
+      const deadline = Date.now() + 60_000;
+      while (!bridge.connected && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      if (!bridge.connected) {
+        console.error(red("timed out waiting for the bridge plugin."));
+        console.error(dim("  is Studio open with a place loaded and the RoForge Bridge plugin active?"));
+        console.error(dim(`  is the bridge token pasted into the plugin dock? (token: ${cfg.bridge.token})`));
+        bridge.stop();
+        process.exit(1);
+      }
+      const steps = [];
+      const runStep = async (label, tool, args, opts) => {
+        const r = await bridge.submit(tool, args, opts || { timeoutMs: 60_000 });
+        if (!r.ok) {
+          console.error(red(`${label} failed: ${r.error}`));
+          bridge.stop();
+          process.exit(1);
+        }
+        steps.push(label);
+        console.log(`${green("  \u2713")} ${label}`);
+        return r;
+      };
+      console.log(green("bridge connected") + "\n");
+      await runStep("imported the obby scene (workspace.Obby)", "forge_import", { json: JSON.stringify(scene), parent: "workspace" });
+      for (const sc of scripts) {
+        const args = { path: sc.path, source: readScript(sc.file), class: sc.class || "Script" };
+        await runStep(`wrote ${sc.file} \u2192 ${sc.path}`, "forge_write", args);
+      }
+      const rTree = await bridge.submit("forge_tree", { root: "workspace", max_depth: 2 }, { timeoutMs: 30_000 });
+      if (rTree.ok) {
+        console.log(dim("\nworkspace now contains:"));
+        console.log(rTree.result + "\n");
+      }
+      console.log(bold("Setup before playing:"));
+      console.log("  1. Play the place (F5) and run the obby — coins, checkpoints, lava, the moving platform and the HUD already work.");
+      console.log("  2. DataStore saves: File > Game Settings > Security > enable Studio Access to API Services (until then, coins are in-memory).");
+      console.log("  3. Shop: create a gamepass in Creator (Economy > Passes), paste its id into ServerScriptService > ObbyScripts > ObbyShop (PASS_ID).");
+      console.log(dim("\nNow tell the agent what to change — 'add a second floor', 'make stage 3 harder', 'add a speedrun timer' — it works on the live place."));
+      bridge.stop();
+      return;
+    }
+
     case "help":
     case "--help":
     case "-h": {
@@ -516,6 +588,7 @@ ${bold("Usage")}
                                           --name <file> installs under a different filename
   roforge pro                 show RoForge Pro license status (needs Studio bridge)
   roforge demo house          build the demo house in your open place (needs the bridge plugin)
+  roforge scaffold obby       push a playable obby (checkpoints, coins, saves, shop, HUD) into your place
   roforge analyze <file...>   run the official Luau analyzer on files
   roforge config [set k v]    show / set configuration
   roforge version

@@ -251,12 +251,19 @@ local function forgeRead(args)
 end
 
 local function forgeWrite(args)
+	local scriptClass = "Script"
+	if args.class ~= nil then
+		scriptClass = tostring(args.class)
+		if not SCRIPT_CLASSES[scriptClass] then
+			return "ERROR: class must be Script, LocalScript, or ModuleScript"
+		end
+	end
 	local inst, err = resolvePath(args.path)
 	if not inst then
 		if args.create == false then
 			return "ERROR: " .. err
 		end
-		inst = createMissing(args.path)
+		inst = createMissing(args.path, scriptClass)
 		if not inst then
 			return "ERROR: could not create " .. tostring(args.path)
 		end
@@ -598,6 +605,7 @@ local TOOLS = {
 				path = { type = "string", description = "Dotted path ending in the Script/LocalScript/ModuleScript" },
 				source = { type = "string", description = "The full new source" },
 				create = { type = "boolean", description = "Create missing script/folders if absent. Default true." },
+				class = { type = "string", description = "Script, LocalScript, or ModuleScript (only when creating). Default Script." },
 			},
 			required = { "path", "source" },
 			additionalProperties = false,
