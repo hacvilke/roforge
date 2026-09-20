@@ -6,6 +6,7 @@ import { webTools } from "./web.js";
 import { robloxTools } from "./roblox.js";
 import { projectTools } from "./project.js";
 import { bridgeTools, mcpToolsFromList, mcpCaptureNames } from "./studio.js";
+import { skillTools } from "./skills.js";
 import { McpClient } from "../mcp.js";
 import { loadPlugins, DEFAULT_ALLOWED_COMMANDS } from "../plugins.js";
 import { configDir } from "../config.js";
@@ -24,6 +25,7 @@ export async function buildTools({ cfg, cwd, bridgeServer, luauAnalyzePath }) {
   add(webTools());
   add(robloxTools());
   add(projectTools({ cwd, luauAnalyzePath }));
+  add(skillTools());
   if (bridgeServer) add(bridgeTools(bridgeServer));
 
   // Strict declarative plugins (JSON only — no code fields, ever).

@@ -8,6 +8,7 @@ import * as Gemini from "./providers/gemini.js";
 import * as Groq from "./providers/groq.js";
 import * as OpenRouter from "./providers/openrouter.js";
 import { modelFor, estimateCost, effectiveProvider, PROVIDERS } from "./config.js";
+import { skillIndexText } from "./skills.js";
 
 const PROVIDER_MODULES = { anthropic: Anthropic, openai: OpenAI, gemini: Gemini, groq: Groq, openrouter: OpenRouter };
 
@@ -96,7 +97,7 @@ Rules:
 - After building or changing anything visual, call forge_viewport with {small: true} to SEE the result, then fix what looks wrong. Do not delete or rebuild what you made unless the user asks — if a part looks wrong, move or resize it.
 - Be concise. Show code only when the user asks or right after you wrote it.
 - You are local: no telemetry, no backend. Only the model provider sees your prompts.
-
+${skillIndexText() ? "\n" + skillIndexText() + "\n" : ""}
 Current state:
 - Model: ${this.model} (${this.providerName}${PROVIDERS[this.providerName] && PROVIDERS[this.providerName].hasFreeTier && this.cfg.freeFirst !== false ? ", free tier" : ""})
 - ${studio.join(" ")}

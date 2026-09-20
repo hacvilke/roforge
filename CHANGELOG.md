@@ -3,6 +3,26 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.23 — 2026-09-20
+
+### Added
+- **RoForge Skills** (ECC-style progressive disclosure): the agent now
+  ships with domain playbooks that load on demand instead of relying on
+  the model to know Roblox:
+  - System prompt lists each skill (name + "Use when …" trigger, ~1 line)
+  - New `roforge_skill` tool loads the full playbook when a task matches
+  - Six bundled skills: `obby-course` (scaffold + attribute contract +
+    difficulty), `character-player` (humanoid, respawn, attributes),
+    `ui-hud-menus` (ScreenGui/HUD/menu patterns), `data-saves`
+    (DataStore pcall/retry/fallback, session locks), `monetization`
+    (gamepass/dev product kiosk flow, pricing), `visuals-presentation`
+    (palette/material/neon/lights/sound/particles)
+  - Integrity tests: frontmatter triggers required, bodies load, fences
+    balanced, tool errors list available skills
+- This is the "tool skills" layer: the tools are the hands, the skills
+  are the know-how — a free-tier model + skills now follows proven
+  sequences instead of hallucinating Roblox APIs.
+
 ## 0.3.22 — 2026-09-15
 
 ### Added
