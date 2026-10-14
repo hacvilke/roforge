@@ -81,6 +81,26 @@ Env wins over file: `GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`,
 `ROFORGE_BRIDGE_PORT`, `ROFORGE_STUDIO_MODE` (auto|mcp|bridge),
 `ROFORGE_MAX_ITERATIONS`, `ROFORGE_LUAU_ANALYZE` (path to the analyzer binary).
 
+## ShipDock integration
+
+Optional. Lets the agent drive [ShipDock](https://shipdock.bootlab.blitz.cloud) —
+the build + test + publish platform for your Roblox game — so it can kick off
+builds and read their status without you touching the dashboard. Set:
+
+- `SHIPDOCK_URL` — the platform address (e.g. `https://shipdock.bootlab.blitz.cloud`)
+- `SHIPDOCK_MACHINE_TOKEN` — a **machine token** you mint in ShipDock (your
+  workspace → Settings → "Machine tokens"). Shown once; store it like a key.
+- `SHIPDOCK_WORKSPACE_ID` — the workspace that token is scoped to.
+- `SHIPDOCK_GAME_ID` — optional default game (else the agent lists games first).
+
+With `SHIPDOCK_URL` + `SHIPDOCK_MACHINE_TOKEN` set, the agent gains three tools:
+`shipdock_build` (start a build + test run — approval-gated), `shipdock_status`
+(stage-by-stage progress + recent logs), and `shipdock_games` (list the
+workspace's games). The token is member-level and single-workspace: it can
+build and read runs there, but can't manage the workspace or touch other
+workspaces. Mint it as an owner, and revoke it from the same panel if you
+rotate it.
+
 ```jsonc
 {
   "provider": "auto",               // auto | gemini | groq | openrouter | anthropic | openai

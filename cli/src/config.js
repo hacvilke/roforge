@@ -203,6 +203,11 @@ export function resolveConfig() {
   if (process.env.ROFORGE_STUDIO_MODE) cfg.studioMode = process.env.ROFORGE_STUDIO_MODE;
   if (process.env.ROFORGE_MAX_ITERATIONS) cfg.maxIterations = Number(process.env.ROFORGE_MAX_ITERATIONS);
   if (process.env.ROFORGE_FREE_FIRST === "0" || process.env.ROFORGE_FREE_FIRST === "false") cfg.freeFirst = false;
+  // ShipDock build/publish integration (machine credential token)
+  if (process.env.SHIPDOCK_URL) cfg.shipdockUrl = process.env.SHIPDOCK_URL;
+  if (process.env.SHIPDOCK_MACHINE_TOKEN) cfg.shipdockToken = process.env.SHIPDOCK_MACHINE_TOKEN;
+  if (process.env.SHIPDOCK_WORKSPACE_ID) cfg.shipdockWorkspaceId = process.env.SHIPDOCK_WORKSPACE_ID;
+  if (process.env.SHIPDOCK_GAME_ID) cfg.shipdockGameId = process.env.SHIPDOCK_GAME_ID;
 
   if (!cfg.bridge.token) {
     cfg.bridge.token = randomToken(24);
