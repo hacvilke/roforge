@@ -132,10 +132,25 @@ export function renderHistory(history) {
   return contents;
 }
 
+// Gemini's functionDeclarations accept an OpenAPI 3.0 subset that does NOT
+// support `additionalProperties` — sending it makes the API reject the whole
+// request ("... additionalProperties ..."). Strip it (recursively) so our
+// strict JSON schemas pass through unchanged in every other way.
+function stripUnsupported(schema) {
+  if (Array.isArray(schema)) return schema.map(stripUnsupported);
+  if (!schema || typeof schema !== "object") return schema;
+  const out = {};
+  for (const [k, v] of Object.entries(schema)) {
+    if (k === "additionalProperties") continue;
+    out[k] = stripUnsupported(v);
+  }
+  return out;
+}
+
 export function renderTools(tools) {
   return tools.map((t) => ({
     name: t.name,
     description: t.description,
-    parameters: t.inputSchema || t.input_schema,
+    parameters: stripUnsupported(t.inputSchema || t.input_schema),
   }));
 }

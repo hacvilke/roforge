@@ -41,6 +41,10 @@ export async function chatStream(cfg, params, events = {}) {
     stream: true,
     messages: msgs,
   };
+  // Cap output tokens when the caller provides a budget (Groq's per-minute
+  // OUTPUT token limit is per-request-able: an uncapped response on a 9k
+  // tokens/min tier 429s itself into the next minute).
+  if (params.maxTokens) body.max_tokens = params.maxTokens;
   if (params.tools && params.tools.length) body.tools = renderTools(params.tools);
 
   let res;
@@ -67,6 +71,25 @@ export async function chatStream(cfg, params, events = {}) {
       throw new ProviderError(
         `${params.model} was retired from the free tier. Paid slug: ${m ? m[1] : "(see error)"} — ` +
           "or pick a live free model: https://openrouter.ai/models?max_price=0 (then /model openrouter:<slug>)"
+      );
+    }
+    // Rate limits (Groq's are per-minute, tokens AND requests): say what
+    // happened and what to do, instead of a raw API blob.
+    if (res.status === 429) {
+      const wait = Number(res.headers.get("retry-after")) || 0;
+      const which = /tokens per minute|tpm/i.test(text)
+        ? "output tokens/minute"
+        : /requests per minute|rpm/i.test(text)
+        ? "requests/minute"
+        : /tokens per day|tpd/i.test(text)
+        ? "tokens/day"
+        : /requests per day|requests\/day/i.test(text)
+        ? "requests/day"
+        : "rate limit";
+      throw new ProviderError(
+        `Rate limit hit (${which}).${wait ? ` Wait ~${wait}s` : " Wait ~30s"} and send the message again` +
+          (which.includes("token") ? " — the output cap per request is set to fit your tier (see `roforge providers` for your model)" : "") +
+          ". To switch: /model <provider:slug> (e.g. /model gemini:gemini-2.5-flash)."
       );
     }
     throw new ProviderError(`OpenAI HTTP ${res.status}: ${text.slice(0, 400)}`);

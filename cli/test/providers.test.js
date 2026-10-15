@@ -118,6 +118,36 @@ test("gemini: missing key → friendly ProviderError", async () => {
   );
 });
 
+test("gemini: additionalProperties is stripped from tool schemas (API rejects it)", async () => {
+  const server = await startMockGemini();
+  const cfg = { geminiKey: "gk", geminiBaseUrl: `http://127.0.0.1:${server.address().port}` };
+  const strictSchema = {
+    type: "object",
+    properties: {
+      name: { type: "string" },
+      nested: { type: "object", properties: { x: { type: "integer" } }, additionalProperties: false },
+    },
+    required: ["name"],
+    additionalProperties: false,
+  };
+  await geminiChat(
+    cfg,
+    {
+      model: "gemini-2.5-flash",
+      messages: [{ role: "user", text: "hi" }],
+      tools: [{ name: "strict", description: "strict", inputSchema: strictSchema }],
+    },
+    {}
+  );
+  const sent = server.lastRequest.body.tools[0].functionDeclarations[0].parameters;
+  const flat = JSON.stringify(sent);
+  assert.ok(!flat.includes("additionalProperties"), `schema still carries additionalProperties: ${flat}`);
+  // ...and everything else survived the strip
+  assert.equal(sent.properties.nested.properties.x.type, "integer");
+  assert.deepEqual(sent.required, ["name"]);
+  server.close();
+});
+
 // ---------------- OpenRouter / Groq (OpenAI-compatible) ----------------
 
 test("openrouter: routes through its own key + base URL", async () => {
@@ -150,6 +180,49 @@ test("groq: routes through its own key + base URL", async () => {
   const req = server.lastRequest;
   assert.equal(req.headers.authorization, "Bearer groq-key");
   assert.equal(req.body.model, "llama-3.3-70b-versatile");
+  server.close();
+});
+
+test("groq: max_tokens is sent so one response can't exceed output-TPM", async () => {
+  const server = await startMockOpenAI();
+  const cfg = {
+    provider: "groq",
+    groqKey: "groq-key",
+    groqBaseUrl: `http://127.0.0.1:${server.address().port}`,
+  };
+  await groqChat(
+    cfg,
+    { model: "llama-3.3-70b-versatile", maxTokens: 8000, messages: [{ role: "user", text: "hi" }] },
+    {}
+  );
+  assert.equal(server.lastRequest.body.max_tokens, 8000);
+  server.close();
+});
+
+test("429 → friendly rate-limit error (not a raw API blob)", async () => {
+  const http = await import("node:http");
+  const server = http.createServer((req, res) => {
+    res.writeHead(429, {
+      "content-type": "application/json",
+      "retry-after": "45",
+    });
+    res.end(JSON.stringify({ error: { message: "Rate limit exceeded for tokens per minute (tpm) - limit is 9000, you used 10000" } }));
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const cfg = {
+    provider: "groq",
+    groqKey: "groq-key",
+    groqBaseUrl: `http://127.0.0.1:${server.address().port}`,
+  };
+  await assert.rejects(
+    () => groqChat(cfg, { model: "llama-3.3-70b-versatile", messages: [{ role: "user", text: "hi" }] }, {}),
+    (e) => {
+      assert.match(e.message, /Rate limit hit \(output tokens\/minute\)/);
+      assert.match(e.message, /Wait ~45s/);
+      assert.match(e.message, /\/model/);
+      return true;
+    }
+  );
   server.close();
 });
 

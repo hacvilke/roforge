@@ -3,6 +3,24 @@
 All user-facing changes. Dates are the build date, not a public release —
 RoForge is pre-1.0.
 
+## 0.3.25 — 2026-10-14
+
+### Fixed (provider bugs from live use)
+- **Gemini "additionalProperties" error**: Gemini's function declarations
+  accept an OpenAPI 3.0 subset that does not allow `additionalProperties`.
+  RoForge's strict tool schemas carry it, so every Gemini request was
+  rejected. It is now stripped (recursively) before sending — schemas are
+  unchanged for every other provider.
+- **Groq output-TPM 429s**: requests no longer rely on Groq's default
+  (uncapped) output — `max_tokens` (8000 default) is always sent, so a
+  single response can no longer exceed a 9k-tokens/minute tier by itself.
+  A 429 now produces a friendly, actionable message (which limit, how long
+  to wait, `/model` hint) instead of a raw API blob.
+
+### Added
+- Provider regression tests: Gemini schema stripping, max_tokens sent,
+  429 → friendly error.
+
 ## 0.3.24 — 2026-09-20
 
 ### Fixed (Roblox API accuracy audit)
